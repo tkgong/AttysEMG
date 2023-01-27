@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- -->
+ <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:ap="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
@@ -12,33 +12,36 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
+<!--
+A Button only has one state whereas a ToggleButton has two state - checked and unchecked
+ToggleButton allows you to have a different style when it's pressed and when it's not pressed.
+-->
 
-        <ToggleButton
-            android:id="@+id/amplitude_rms_pp"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.75"
-            android:textOff="pp"
-            android:textOn="RMS" />
 
         <ToggleButton
             android:id="@+id/amplitude_doRecord"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:layout_weight="1" />
 
         <Button
             android:id="@+id/amplitude_Reset"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:layout_weight="1"
             android:text="RESET" />
+        <Button
+            android:id="@+id/take_screenshot"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="SCREENSHOT"/>
 
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:orientation="horizontal">
 
         <Spinner
@@ -81,19 +84,52 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text=" "/>
-
-        <TextView
-            android:id="@+id/amplitude_valueTextView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:layout_margin="0dp"
-            android:gravity="end"
-            android:text=""
-            android:textColor="#00FFFF"
-            android:textSize="36sp" />
-
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        >
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/Participant_ID_TextView"
+                android:textColor="@color/ap_white"
+                android:text="Participant ID:"
+                android:layout_marginLeft="10dp"
+                />
+            <EditText
+                android:id="@+id/Participant_ID_EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ap_white"
+                android:hint="Enter the Participant ID Here"/>
+
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/Current_Intensity_TextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Current Intensity"
+                android:textColor="@color/ap_white"
+                android:layout_marginLeft="10dp"/>
+            <EditText
+                android:id="@+id/Current_Intensity_EditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ap_white"
+                android:hint="Enter the Current Intensity Here"/>
+
+        </LinearLayout>
+    </LinearLayout>
+
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="fill_parent"

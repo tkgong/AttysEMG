@@ -30,6 +30,8 @@ import android.view.SurfaceView;
 /**
  * Plots the data on a surface view. Optimised for speed.
  */
+
+// Not needed
 public class RealtimePlotView extends SurfaceView implements SurfaceHolder.Callback {
 
     static private int xpos = 0;

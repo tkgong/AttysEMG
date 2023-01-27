@@ -3,7 +3,7 @@ package tech.glasgowneuro.attysscope2;
 /**
  * Calculates various signal stats. Just now pp and RMS
  */
-
+//Only want pp in this project
 public class SignalAnalysis {
 
     private int maxdata;
@@ -34,18 +34,18 @@ public class SignalAnalysis {
         return nData == maxdata;
     }
 
-    public float getRMS() {
-        float r = 0;
-        if (nData > 0) {
-            for (int i = 0; i < nData; i++) {
-                float f = data[i];
-                r = r + f * f;
-            }
-            r = r / nData;
-            r = (float) Math.sqrt(r);
-        }
-        return r;
-    }
+//    public float getRMS() { // delete it
+//        float r = 0;
+//        if (nData > 0) {
+//            for (int i = 0; i < nData; i++) {
+//                float f = data[i];
+//                r = r + f * f;
+//            }
+//            r = r / nData;
+//            r = (float) Math.sqrt(r);
+//        }
+//        return r;
+//    }
 
     public float getPeakToPeak() {
         float min = 1E10F;

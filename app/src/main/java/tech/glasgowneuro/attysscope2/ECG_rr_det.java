@@ -21,9 +21,9 @@ import uk.me.berndporr.iirj.Butterworth;
  * It also has a callback function which is called when
  * a heartbeat is detected (implemented as a listener).
  */
+// This is not needed
 
-
-public class ECG_rr_det {
+/*public class ECG_rr_det {
 
     String TAG = "ECG_rr_det";
 
@@ -227,4 +227,4 @@ public class ECG_rr_det {
         }
         timestamp++;
     }
-}
+}*/

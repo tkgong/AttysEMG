@@ -3,7 +3,6 @@ package tech.glasgowneuro.attysscope2;
 import android.content.Context;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
 
 /**
  * Calculates the screensize and determines if it's a mobile or not

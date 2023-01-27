@@ -1,21 +1,15 @@
 package tech.glasgowneuro.attysscope2;
 
 import android.Manifest;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.net.Uri;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.documentfile.provider.DocumentFile;
-import androidx.fragment.app.Fragment;
-import androidx.appcompat.app.AlertDialog;
+import android.os.Environment;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,11 +18,13 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
 
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
@@ -38,13 +34,13 @@ import com.androidplot.xy.XYGraphWidget;
 import com.androidplot.xy.XYPlot;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.util.Date;
 import java.util.Locale;
-import java.util.Objects;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
-import tech.glasgowneuro.attyscomm.AttysService;
 
 /**
  * RMS / pp Fragment
@@ -58,7 +54,7 @@ public class AmplitudeFragment extends Fragment {
 
     final int nSampleBufferSize = 100;
 
-    private boolean isRMSmode = false;
+    //private boolean isRMSmode = false;
 
     private static final String[] MAXYTXT = {
             "auto range", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
@@ -80,14 +76,16 @@ public class AmplitudeFragment extends Fragment {
     private SignalAnalysis signalAnalysis = null;
 
     private final String[] units = new String[AttysComm.NCHANNELS];
-
     public void setUnits(String [] _units) {
         System.arraycopy(_units, 0, units, 0, AttysComm.NCHANNELS);
     }
 
     View view = null;
 
-    int samplingRate = 250;
+    int samplingRate = 250; // SR = 250HZ, need to modify it for EMG recording
+
+    /* The EMG frequency ranges vary from 0.01 Hz to 10 kHz, depending on the type of examination (invasive or noninvasive).
+    The most useful and important frequency ranges are within the range from 50 to 150 Hz */
 
     int step = 0;
 
@@ -108,7 +106,7 @@ public class AmplitudeFragment extends Fragment {
     public void reset() {
         ready = false;
 
-        signalAnalysis = new SignalAnalysis(windowLength);
+        signalAnalysis = new SignalAnalysis(windowLength); // windowLength == 100
 
         step = 0;
 
@@ -118,11 +116,11 @@ public class AmplitudeFragment extends Fragment {
         }
         amplitudeFullSeries = new SimpleXYSeries(" ");
 
-        if (isRMSmode) {
-            amplitudeHistorySeries.setTitle(units[channel] + " RMS");
-        } else {
+//        if (isRMSmode) {
+//            amplitudeHistorySeries.setTitle(units[channel] + " RMS");
+//        } else {
             amplitudeHistorySeries.setTitle(units[channel] + " pp");
-        }
+        //}
         amplitudePlot.setRangeLabel(units[channel]);
         amplitudePlot.setTitle(" ");
 
@@ -130,7 +128,31 @@ public class AmplitudeFragment extends Fragment {
 
         ready = true;
     }
+    protected static File takeScreenShot (View view, String fileNme){
+        Date date = new Date();
+        CharSequence format = DateFormat.format("yyyy-MM-dd_hh:mm:ss", date);
+        try {
+            String dirPath = Environment.getExternalStorageDirectory().toString() + "/Screenshot";
+            File fileDir = new File(dirPath);
+            if(!fileDir.exists()){
+                boolean mkdir = fileDir.mkdir();
+            }
+            String path = dirPath + "/" + fileNme + "-" + format +"jpeg";
+            view.setDrawingCacheEnabled(true);
+            Bitmap bitmap = Bitmap.createBitmap(view.getDrawingCache());
+            view.setDrawingCacheEnabled(false);
 
+            File imageFile = new File(path);
+            FileOutputStream fileOutputStream = new FileOutputStream(imageFile);
+            int imageQuality = 100;
+             bitmap.compress(Bitmap.CompressFormat.JPEG, imageQuality, fileOutputStream);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     /**
      * Called when the activity is first created.
@@ -151,12 +173,17 @@ public class AmplitudeFragment extends Fragment {
         signalAnalysis = new SignalAnalysis(samplingRate);
 
         view = inflater.inflate(R.layout.amplitudefragment, container, false);
+        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        view.setLayoutParams(params);
+
+        //ask for file permission
+
 
         // setup the APR Levels plot:
         amplitudePlot = view.findViewById(R.id.amplitude_PlotView);
         amplitudeHistorySeries = new SimpleXYSeries(" ");
-        amplitudeReadingText = view.findViewById(R.id.amplitude_valueTextView);
-        amplitudeReadingText.setText(String.format(Locale.US,"%04d", 0));
+        //amplitudeReadingText = view.findViewById(R.id.amplitude_valueTextView);
+        //amplitudeReadingText.setText(String.format(Locale.US,"%04d", 0));
         ToggleButton toggleButtonDoRecord = view.findViewById(R.id.amplitude_doRecord);
         toggleButtonDoRecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -165,27 +192,39 @@ public class AmplitudeFragment extends Fragment {
         });
         toggleButtonDoRecord.setChecked(true);
 
-        ToggleButton toggleButtonRMS_pp = view.findViewById(R.id.amplitude_rms_pp);
+        /*ToggleButton toggleButtonRMS_pp = view.findViewById(R.id.amplitude_rms_pp);
         toggleButtonRMS_pp.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 isRMSmode = isChecked;
                 reset();
             }
         });
-        toggleButtonRMS_pp.setChecked(false);
+        toggleButtonRMS_pp.setChecked(false);*/
 
+        Button screenshotButton = view.findViewById(R.id.take_screenshot);
+        screenshotButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                takeScreenShot(getActivity().getWindow().getDecorView().getRootView(), "Screenshot");
+            }
+        });
         Button resetButton = view.findViewById(R.id.amplitude_Reset);
         resetButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 reset();
             }
-        });
 
+        });
         Spinner spinnerChannel = view.findViewById(R.id.amplitude_channel);
+//        String[] channelName = {"ADC_1", "ADC_2", "ADC_1+ADC_2"};
+//        ArrayAdapter<String> adapterChannel =
+//                new ArrayAdapter<>(requireContext(),
+//                android.R.layout.simple_spinner_dropdown_item,
+//                channelName);
         ArrayAdapter<String> adapterChannel =
                 new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_dropdown_item,
-                AttysComm.CHANNEL_DESCRIPTION_SHORT);
+                        android.R.layout.simple_spinner_dropdown_item,
+                        AttysComm.CHANNEL_DESCRIPTION_SHORT);
         adapterChannel.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerChannel.setAdapter(adapterChannel);
         spinnerChannel.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -332,19 +371,20 @@ public class AmplitudeFragment extends Fragment {
 
         double delta_t = (double) windowLength * (1.0 / samplingRate);
 
-        if (isRMSmode) {
+//        if (isRMSmode) {
+//            if (signalAnalysis != null) {
+//                current_stat_result = signalAnalysis.getRMS(); // may not need to display RMS value
+//            }
+//        } else {
+
             if (signalAnalysis != null) {
-                current_stat_result = signalAnalysis.getRMS();
+                current_stat_result = signalAnalysis.getPeakToPeak(); // peak-to-peak value of the signal -- wanted
             }
-        } else {
-            if (signalAnalysis != null) {
-                current_stat_result = signalAnalysis.getPeakToPeak();
-            }
-        }
+        //}
 
         if (amplitudeHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "amplitudeHistorySeries == null");
+                Log.v(TAG, "amplitudeHistorySeries == null"); // is this used to display previous epochs?
             }
             return;
         }
@@ -372,11 +412,8 @@ public class AmplitudeFragment extends Fragment {
                 @Override
                 public void run() {
                     if (amplitudeReadingText != null) {
-                        if (isRMSmode) {
-                            amplitudeReadingText.setText(String.format(Locale.US,"%1.05f %s RMS", current_stat_result, units[channel]));
-                        } else {
-                            amplitudeReadingText.setText(String.format(Locale.US,"%1.05f %s pp", current_stat_result, units[channel]));
-                        }
+                        amplitudeReadingText.setText(String.format(Locale.US,"%1.05f %s pp", current_stat_result, units[channel]));
+
                     }
                 }
             });

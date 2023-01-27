@@ -39,23 +39,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.preference.PreferenceManager;
-
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.documentfile.provider.DocumentFile;
-import androidx.fragment.app.Fragment;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
@@ -68,6 +51,21 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+import androidx.documentfile.provider.DocumentFile;
+import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceManager;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -83,7 +81,7 @@ import tech.glasgowneuro.attyscomm.AttysComm;
 import tech.glasgowneuro.attyscomm.AttysService;
 import uk.me.berndporr.iirj.Butterworth;
 
-public class AttysScope extends AppCompatActivity {
+public class AttysScope extends AppCompatActivity { // main activity
 
     private Timer timer = null;
     // screen refresh rate
@@ -97,7 +95,7 @@ public class AttysScope extends AppCompatActivity {
     // Fragments
     AmplitudeFragment amplitudeFragment = null;
     FourierFragment fourierFragment = null;
-    HeartratePlotFragment heartRateFragment = null;
+    //HeartratePlotFragment heartRateFragment = null;
 
     // Menu checkboxes
     MenuItem menuItemHighpass1 = null;
@@ -112,7 +110,7 @@ public class AttysScope extends AppCompatActivity {
     MenuItem menuItemRec = null;
 
     private AttysService attysService = null;
-    private byte samplingRate = AttysComm.ADC_RATE_250HZ;
+    private byte samplingRate = AttysComm.ADC_RATE_250HZ; //should be more than that
 
     private UpdatePlotTask updatePlotTask = null;
 
@@ -139,6 +137,12 @@ public class AttysScope extends AppCompatActivity {
     private float powerlineHz = 50;
     private float highpass1Hz = 0.1F;
     private float highpass2Hz = 0.1F;
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSION_STORAGE = {
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+    };
+
 
     private final int RINGBUFFERSIZE = 1024;
     private final float[][] ringBuffer = new float[RINGBUFFERSIZE][AttysComm.NCHANNELS];
@@ -154,17 +158,17 @@ public class AttysScope extends AppCompatActivity {
         }
     }
 
-    private boolean showAcc = false;
-    private boolean showMag = false;
+//    private boolean showAcc = false;
+//    private boolean showMag = false;
     private boolean showCh1 = true;
     private boolean showCh2 = true;
 
     private float ch1Div = 1;
     private float ch2Div = 1;
 
-    private final float magTick = 1000.0E-6F; //1000uT
+//    private final float magTick = 1000.0E-6F; //1000uT
 
-    private final float accTick = AttysComm.oneG; // 1G
+//    private final float accTick = AttysComm.oneG; // 1G
 
     private int timebase = 1;
 
@@ -172,8 +176,17 @@ public class AttysScope extends AppCompatActivity {
 
     private int theChannelWeDoAnalysis = 0;
 
-    private int gpio0 = 0;
-    private int gpio1 = 0;
+//    private int gpio0 = 0;
+//    private int gpio1 = 0;
+public static void verifyStoragePermission (Activity activity){
+    int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+    if (permission != PackageManager.PERMISSION_GRANTED){
+        ActivityCompat.requestPermissions(activity,
+                PERMISSION_STORAGE,
+                REQUEST_EXTERNAL_STORAGE);
+    }
+}
 
     public enum TextAnnotation {
         NONE,
@@ -184,7 +197,7 @@ public class AttysScope extends AppCompatActivity {
 
     private SignalAnalysis signalAnalysis = null;
 
-    private ECG_rr_det ecg_rr_det = null;
+    //private ECG_rr_det ecg_rr_det = null; // ecg_rr_det should be deleted
 
     int ygapForInfo = 0;
 
@@ -194,9 +207,12 @@ public class AttysScope extends AppCompatActivity {
     //double ecgDetOut;
 
     String[] labels = {
-            "Acc x", "Acc y", "Acc z",
-            "Mag x", "Mag y", "Mag z",
             "ADC 1", "ADC 2"};
+//    String[] labels = {
+//            "Acc x", "Acc y", "Acc z",
+//            "Mag x", "Mag y", "Mag z",
+//            "ADC 1", "ADC 2"};
+
 
     String[] units = new String[AttysComm.NCHANNELS];
 
@@ -221,7 +237,8 @@ public class AttysScope extends AppCompatActivity {
         float coldJunctionT = 20;
 
         // units as strings fo the different settings
-        private final String[] units = {"V", "V", "V", "\u2126", "\u2126", "\u00b0C", "\u00b0C"};
+        private final String[] units = {"V", "V"};
+//        private final String[] units = {"V", "V", "V", "\u2126", "\u2126", "\u00b0C", "\u00b0C"};
 
         // current settings
         private final int[] currentIndex = {0, 1, 2, 1, 2, 2, -1};
@@ -435,15 +452,15 @@ public class AttysScope extends AppCompatActivity {
                 return;
             }
             signalAnalysis.reset();
-            ecg_rr_det.reset();
+            //ecg_rr_det.reset();
 
             m_unit = units[theChannelWeDoAnalysis];
-
-            if ((theChannelWeDoAnalysis == AttysComm.INDEX_Magnetic_field_X) ||
-                    (theChannelWeDoAnalysis == AttysComm.INDEX_Magnetic_field_Y) ||
-                    (theChannelWeDoAnalysis == AttysComm.INDEX_Magnetic_field_Z)) {
-                m_unit = "\u00b5" + m_unit;
-            }
+//
+//            if ((theChannelWeDoAnalysis == AttysComm.INDEX_Magnetic_field_X) ||
+//                    (theChannelWeDoAnalysis == AttysComm.INDEX_Magnetic_field_Y) ||
+//                    (theChannelWeDoAnalysis == AttysComm.INDEX_Magnetic_field_Z)) {
+//                m_unit = "\u00b5" + m_unit;
+//            }
 
             annotatePlot("---------------");
         }
@@ -458,17 +475,19 @@ public class AttysScope extends AppCompatActivity {
                 small = small + String.format(Locale.getDefault(), "ADC2 = %1.04f%s/div (X%d), ", ch2Div,
                         ch2Converter.getUnit(), (int) gain[AttysComm.INDEX_Analogue_channel_2]);
             }
-            if (showAcc) {
-                small = small + String.format(Locale.getDefault(), "ACC = %dG/div, ", Math.round(accTick / AttysComm.oneG));
-            }
-            if (showMag) {
-                small = small + String.format(Locale.getDefault(), "MAG = %d\u00b5T/div, ", Math.round(magTick / 1E-6));
-            }
-            small = small + String.format(Locale.getDefault(), " d=%d,%d", gpio0, gpio1);
+//            if (showAcc) {
+//                small = small + String.format(Locale.getDefault(), "ACC = %dG/div, ", Math.round(accTick / AttysComm.oneG));
+//            }
+//            if (showMag) {
+//                small = small + String.format(Locale.getDefault(), "MAG = %d\u00b5T/div, ", Math.round(magTick / 1E-6));
+//            }
+//            small = small + String.format(Locale.getDefault(), " d=%d,%d", gpio0, gpio1);
             if (largeText != null) {
                 largeText = String.format("%s: ", labels[theChannelWeDoAnalysis]) + largeText;
-            }
-            if (infoView != null) {
+//                String[] labels = {
+//                        "Acc x", "Acc y", "Acc z",
+//                        "Mag x", "Mag y", "Mag z",
+//                        "ADC 1", "ADC 2"};
                 if (attysService.getAttysComm() != null) {
                     final String lt = largeText;
                     final String st = small;
@@ -495,15 +514,15 @@ public class AttysScope extends AppCompatActivity {
                         annotatePlot(null);
                     }
                     break;
-                case RMS:
-                    signalAnalysis.addData(v);
-                    if (signalAnalysis.bufferFull()) {
-                        annotatePlot(String.format(Locale.getDefault(), "%1.05f%s RMS",
-                                signalAnalysis.getRMS(),
-                                m_unit));
-                        signalAnalysis.reset();
-                    }
-                    break;
+//                case RMS:
+//                    signalAnalysis.addData(v);
+//                    if (signalAnalysis.bufferFull()) {
+//                        annotatePlot(String.format(Locale.getDefault(), "%1.05f%s RMS",
+//                                signalAnalysis.getRMS(),
+//                                m_unit));
+//                        signalAnalysis.reset();
+//                    }
+//                    break;
                 case PEAKTOPEAK:
                     signalAnalysis.addData(v);
                     if (signalAnalysis.bufferFull()) {
@@ -566,18 +585,17 @@ public class AttysScope extends AppCompatActivity {
                             sample[j] = v;
                         }
 
-                        gpio0 = (int) sample[AttysComm.INDEX_GPIO0];
-                        gpio1 = (int) sample[AttysComm.INDEX_GPIO1];
+//                        gpio0 = (int) sample[AttysComm.INDEX_GPIO0];
+//                        gpio1 = (int) sample[AttysComm.INDEX_GPIO1];
 
-                        ecg_rr_det.detect(sample[AttysComm.INDEX_Analogue_channel_1]);
+                        //ecg_rr_det.detect(sample[AttysComm.INDEX_Analogue_channel_1]);
 
                         if (amplitudeFragment != null) {
                             amplitudeFragment.addValue(sample);
                         }
 
-                        if (fourierFragment != null) {
-                            fourierFragment.addValue(sample);
-                        }
+                        //if (fourierFragment != null) {
+                            //fourierFragment.addValue(sample);}
 
                         int nRealChN = 0;
                         if (showCh1) {
@@ -591,7 +609,10 @@ public class AttysScope extends AppCompatActivity {
                                 tmpTick[nRealChN] = ch1Div * gain[AttysComm.INDEX_Analogue_channel_1];
                                 tmpLabels[nRealChN] = labels[AttysComm.INDEX_Analogue_channel_1];
                                 actualChannelIdx[nRealChN] = AttysComm.INDEX_Analogue_channel_1;
-                                tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_1] * gain[AttysComm.INDEX_Analogue_channel_1];
+                                // amplitute the signal
+                                tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_1] * 2000;
+
+                                //tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_1] * gain[AttysComm.INDEX_Analogue_channel_1];
                             }
                         }
                         if (showCh2) {
@@ -602,40 +623,42 @@ public class AttysScope extends AppCompatActivity {
                                 tmpTick[nRealChN] = ch2Converter.getTick();
                                 tmpLabels[nRealChN] = labels[AttysComm.INDEX_Analogue_channel_2];
                                 actualChannelIdx[nRealChN] = AttysComm.INDEX_Analogue_channel_2;
+
+                                // amplitute the signal
                                 tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_2] * gain[AttysComm.INDEX_Analogue_channel_2];
                             }
                         }
-                        if (showAcc) {
-                            if (attysService.getAttysComm() != null) {
-                                float min = -attysService.getAttysComm().getAccelFullScaleRange();
-                                float max = attysService.getAttysComm().getAccelFullScaleRange();
-
-                                for (int k = 0; k < 3; k++) {
-                                    tmpMin[nRealChN] = min;
-                                    tmpMax[nRealChN] = max;
-                                    tmpTick[nRealChN] = gain[k] * accTick;
-                                    tmpLabels[nRealChN] = labels[k];
-                                    actualChannelIdx[nRealChN] = k;
-                                    tmpSample[nRealChN++] = sample[k] * gain[k];
-                                }
-                            }
-                        }
-                        if (showMag) {
-                            if (attysService.getAttysComm() != null) {
-                                for (int k = 0; k < 3; k++) {
-                                    if (attysService.getAttysComm() != null) {
-                                        tmpMin[nRealChN] = -attysService.getAttysComm().getMagFullScaleRange();
-                                    }
-                                    if (attysService.getAttysComm() != null) {
-                                        tmpMax[nRealChN] = attysService.getAttysComm().getMagFullScaleRange();
-                                    }
-                                    tmpLabels[nRealChN] = labels[k + 3];
-                                    actualChannelIdx[nRealChN] = k + 3;
-                                    tmpTick[nRealChN] = magTick;
-                                    tmpSample[nRealChN++] = sample[k + 3] * gain[k + 3];
-                                }
-                            }
-                        }
+//                        if (showAcc) {
+//                            if (attysService.getAttysComm() != null) {
+//                                float min = -attysService.getAttysComm().getAccelFullScaleRange();
+//                                float max = attysService.getAttysComm().getAccelFullScaleRange();
+//
+//                                for (int k = 0; k < 3; k++) {
+//                                    tmpMin[nRealChN] = min;
+//                                    tmpMax[nRealChN] = max;
+//                                    tmpTick[nRealChN] = gain[k] * accTick;
+//                                    tmpLabels[nRealChN] = labels[k];
+//                                    actualChannelIdx[nRealChN] = k;
+//                                    tmpSample[nRealChN++] = sample[k] * gain[k];
+//                                }
+//                            }
+//                        }
+//                        if (showMag) {
+//                            if (attysService.getAttysComm() != null) {
+//                                for (int k = 0; k < 3; k++) {
+//                                    if (attysService.getAttysComm() != null) {
+//                                        tmpMin[nRealChN] = -attysService.getAttysComm().getMagFullScaleRange();
+//                                    }
+//                                    if (attysService.getAttysComm() != null) {
+//                                        tmpMax[nRealChN] = attysService.getAttysComm().getMagFullScaleRange();
+//                                    }
+//                                    tmpLabels[nRealChN] = labels[k + 3];
+//                                    actualChannelIdx[nRealChN] = k + 3;
+//                                    tmpTick[nRealChN] = magTick;
+//                                    tmpSample[nRealChN++] = sample[k + 3] * gain[k + 3];
+//                                }
+//                            }
+//                        }
                         if (infoView != null) {
                             ygapForInfo = infoView.getInfoHeight();
                         }
@@ -792,7 +815,7 @@ public class AttysScope extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        verifyStoragePermission(this);
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -816,13 +839,13 @@ public class AttysScope extends AppCompatActivity {
             // set it to 1st ADC channel
             actualChannelIdx[i] = AttysComm.INDEX_Analogue_channel_1;
             gain[i] = 1;
-            if ((i >= AttysComm.INDEX_Magnetic_field_X) && (i <= AttysComm.INDEX_Magnetic_field_Z)) {
-                gain[i] = 20;
-            }
+//            if ((i >= AttysComm.INDEX_Magnetic_field_X) && (i <= AttysComm.INDEX_Magnetic_field_Z)) {
+//                gain[i] = 20;
+//            }
         }
 
         realtimePlotView = findViewById(R.id.realtimeplotview);
-        realtimePlotView.setMaxChannels(15);
+        realtimePlotView.setMaxChannels(15); // united states
         realtimePlotView.init();
 
         realtimePlotView.registerTouchEventListener(
@@ -878,7 +901,7 @@ public class AttysScope extends AppCompatActivity {
         }
     }
 
-
+    // this is to turn on/off the high pass filters
     private void checkMenuItems() {
         if (menuItemHighpass1 != null) {
             if (menuItemHighpass1.isChecked()) {
@@ -1005,15 +1028,17 @@ public class AttysScope extends AppCompatActivity {
             theChannelWeDoAnalysis = AttysComm.INDEX_Analogue_channel_1;
         } else if (showCh2) {
             theChannelWeDoAnalysis = AttysComm.INDEX_Analogue_channel_2;
-        } else if (showAcc) {
-            theChannelWeDoAnalysis = AttysComm.INDEX_Acceleration_X;
-        } else if (showMag) {
-            theChannelWeDoAnalysis = AttysComm.INDEX_Magnetic_field_X;
         }
+//        else if (showAcc) {
+//            theChannelWeDoAnalysis = AttysComm.INDEX_Acceleration_X;
+//        }
+//        else if (showMag) {
+//            theChannelWeDoAnalysis = AttysComm.INDEX_Magnetic_field_X;
+//        }
 
-        ecg_rr_det = new ECG_rr_det(attysService.getAttysComm().getSamplingRateInHz(), powerlineHz);
+        //ecg_rr_det = new ECG_rr_det(attysService.getAttysComm().getSamplingRateInHz(), powerlineHz);
 
-        ecg_rr_det.setRrListener(new ECG_rr_det.RRlistener() {
+        /*ecg_rr_det.setRrListener(new ECG_rr_det.RRlistener() {
             @Override
             public void haveRpeak(long samplenumber,
                                   float bpm,
@@ -1029,7 +1054,7 @@ public class AttysScope extends AppCompatActivity {
                     heartRateFragment.addValue(bpm);
                 }
             }
-        });
+        });*/
 
         startAnimation();
 
@@ -1331,15 +1356,15 @@ public class AttysScope extends AppCompatActivity {
                 item.setChecked(showCh2);
                 return true;
 
-            case R.id.showaccelerometer:
-                showAcc = !showAcc;
-                item.setChecked(showAcc);
-                return true;
-
-            case R.id.showmagnetometer:
-                showMag = !showMag;
-                item.setChecked(showMag);
-                return true;
+//            case R.id.showaccelerometer:
+//                showAcc = !showAcc;
+//                item.setChecked(showAcc);
+//                return true;
+//
+//            case R.id.showmagnetometer:
+//                showMag = !showMag;
+//                item.setChecked(showMag);
+//                return true;
 
             case R.id.enterFilename:
                 if (!(dataRecorder.isRecording())) {
@@ -1396,19 +1421,19 @@ public class AttysScope extends AppCompatActivity {
                 }
                 return true;
 
-            case R.id.Ch1invert:
-                boolean a = invert[AttysComm.INDEX_Analogue_channel_1];
-                a = !a;
-                invert[AttysComm.INDEX_Analogue_channel_1] = a;
-                item.setChecked(a);
-                return true;
-
-            case R.id.Ch2invert:
-                a = invert[AttysComm.INDEX_Analogue_channel_2];
-                a = !a;
-                invert[AttysComm.INDEX_Analogue_channel_2] = a;
-                item.setChecked(a);
-                return true;
+//            case R.id.Ch1invert:
+//                boolean a = invert[AttysComm.INDEX_Analogue_channel_1];
+//                a = !a;
+//                invert[AttysComm.INDEX_Analogue_channel_1] = a;
+//                item.setChecked(a);
+//                return true;
+//
+//            case R.id.Ch2invert:
+//                a = invert[AttysComm.INDEX_Analogue_channel_2];
+//                a = !a;
+//                invert[AttysComm.INDEX_Analogue_channel_2] = a;
+//                item.setChecked(a);
+//                return true;
 
             case R.id.Ch1gain1:
             case R.id.Ch1gain2:
@@ -1473,10 +1498,10 @@ public class AttysScope extends AppCompatActivity {
                 updatePlotTask.resetAnalysis();
                 return true;
 
-            case R.id.largeStatusBPM:
-                textAnnotation = TextAnnotation.ECG;
-                updatePlotTask.resetAnalysis();
-                return true;
+//            case R.id.largeStatusBPM:
+//                textAnnotation = TextAnnotation.ECG;
+//                updatePlotTask.resetAnalysis();
+//                return true;
 
             case R.id.infoWindowAmplitude:
                 deleteFragmentWindow();
@@ -1501,30 +1526,30 @@ public class AttysScope extends AppCompatActivity {
                 showPlotFragment();
                 return true;
 
-            case R.id.infoWindowSpectrum:
-                deleteFragmentWindow();
-                // Create a new Fragment to be placed in the activity layout
-                fourierFragment = new FourierFragment();
-                fourierFragment.setUnits(units);
-                if (attysService.getAttysComm() != null) {
-                    fourierFragment.setSamplingrate(attysService.getAttysComm().getSamplingRateInHz());
-                } else {
-                    fourierFragment = null;
-                    return true;
-                }
-                // Add the fragment to the 'fragment_container' FrameLayout
-                if (Log.isLoggable(TAG, Log.DEBUG)) {
-                    Log.d(TAG, "Adding Fourier fragment");
-                }
-                getSupportFragmentManager().beginTransaction()
-                        .add(R.id.fragment_plot_container,
-                                fourierFragment,
-                                "fourierFragment")
-                        .commit();
-                showPlotFragment();
-                return true;
+//            case R.id.infoWindowSpectrum:
+//                deleteFragmentWindow();
+//                // Create a new Fragment to be placed in the activity layout
+//                fourierFragment = new FourierFragment();
+//                fourierFragment.setUnits(units);
+//                if (attysService.getAttysComm() != null) {
+//                    fourierFragment.setSamplingrate(attysService.getAttysComm().getSamplingRateInHz());
+//                } else {
+//                    fourierFragment = null;
+//                    return true;
+//                }
+//                // Add the fragment to the 'fragment_container' FrameLayout
+//                if (Log.isLoggable(TAG, Log.DEBUG)) {
+//                    Log.d(TAG, "Adding Fourier fragment");
+//                }
+//                getSupportFragmentManager().beginTransaction()
+//                        .add(R.id.fragment_plot_container,
+//                                fourierFragment,
+//                                "fourierFragment")
+//                        .commit();
+//                showPlotFragment();
+//                return true;
 
-            case R.id.infoWindowHeartrate:
+            /*case R.id.infoWindowHeartrate:
                 deleteFragmentWindow();
                 // Create a new Fragment to be placed in the activity layout
                 heartRateFragment = new HeartratePlotFragment();
@@ -1538,7 +1563,7 @@ public class AttysScope extends AppCompatActivity {
                                 "heartRateFragment")
                         .commit();
                 showPlotFragment();
-                return true;
+                return true;*/
 
             case R.id.infoWindowOff:
                 deleteFragmentWindow();
@@ -1611,9 +1636,9 @@ public class AttysScope extends AppCompatActivity {
         dataSeparator = (byte) (Integer.parseInt(prefs.getString("data_separator", "0")));
         Log.d(TAG, "Data separator = " + dataSeparator + ", suff:" + getFileSuffix());
 
-        int fullscaleAcc = Integer.parseInt(prefs.getString("accFullscale", "1"));
-
-        attysService.getAttysComm().setAccel_full_scale_index((byte) fullscaleAcc);
+//        int fullscaleAcc = Integer.parseInt(prefs.getString("accFullscale", "1"));
+//
+//        attysService.getAttysComm().setAccel_full_scale_index((byte) fullscaleAcc);
 
         powerlineHz = Float.parseFloat(prefs.getString("powerline", "50"));
         if (Log.isLoggable(TAG, Log.DEBUG)) {
@@ -1701,7 +1726,7 @@ public class AttysScope extends AppCompatActivity {
         }
         amplitudeFragment = null;
         fourierFragment = null;
-        heartRateFragment = null;
+        //heartRateFragment = null;
     }
 
     public final static byte DATA_SEPARATOR_TAB = 0;
@@ -1811,11 +1836,12 @@ public class AttysScope extends AppCompatActivity {
 
             String tmp = String.format(Locale.US, "%e%c", (double) sampleNo / (double) attysService.getAttysComm().getSamplingRateInHz(), s);
             for (int i=0;i<AttysComm.NCHANNELS;i++) {
-                if (i < AttysComm.INDEX_GPIO0) {
-                    tmp = tmp + String.format(Locale.US, "%e%c", data[i], s);
-                } else {
+//                if (i < AttysComm.INDEX_GPIO0) {
+//                    tmp = tmp + String.format(Locale.US, "%e%c", data[i], s);
+               // }
+//            else {
                     tmp = tmp + String.format(Locale.US, "%d%c", (int)(data[i]), s);
-                }
+               // }
             }
             tmp = tmp + String.format(Locale.US, "%e%c", adc1, s);
             tmp = tmp + String.format(Locale.US, "%e", adc2);
@@ -1827,5 +1853,7 @@ public class AttysScope extends AppCompatActivity {
     }
 
     private final DataRecorder dataRecorder = new DataRecorder();
+
+
 
 }
