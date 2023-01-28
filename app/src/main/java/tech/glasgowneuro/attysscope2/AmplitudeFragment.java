@@ -1,6 +1,8 @@
 package tech.glasgowneuro.attysscope2;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -14,16 +16,19 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 
 import com.androidplot.xy.BoundaryMode;
@@ -208,13 +213,49 @@ public class AmplitudeFragment extends Fragment {
                 takeScreenShot(getActivity().getWindow().getDecorView().getRootView(), "Screenshot");
             }
         });
-        Button resetButton = view.findViewById(R.id.amplitude_Reset);
-        resetButton.setOnClickListener(new View.OnClickListener() {
+//        Button resetButton = view.findViewById(R.id.amplitude_Reset);
+//        resetButton.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//                reset();
+//            }
+//
+//        });
+        Button highlightButton = view.findViewById(R.id.highlight);
+        highlightButton.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
-                reset();
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                LayoutInflater inflater = getActivity().getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.highlight_dialog, null);
+                builder.setView(dialogView);
+                final AlertDialog dialog = builder.create();
+                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+                lp.copyFrom(dialog.getWindow().getAttributes());
+                lp.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
+                dialog.show();
+                dialog.getWindow().setAttributes(lp);
+                EditText left_Margin = (EditText) dialogView.findViewById(R.id.left_margin);
+                String userInput_left = left_Margin.getText().toString().trim();
+                EditText right_Margin = (EditText) dialogView.findViewById(R.id.right_margin);
+                String userInput_Right = right_Margin.getText().toString().trim();
+                Button ok_Button = dialogView.findViewById(R.id.OK_Button);
+                ok_Button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
+                Button cancel_Button = dialogView.findViewById(R.id.Cancel_Button);
+                cancel_Button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
             }
-
         });
+
         Spinner spinnerChannel = view.findViewById(R.id.amplitude_channel);
 //        String[] channelName = {"ADC_1", "ADC_2", "ADC_1+ADC_2"};
 //        ArrayAdapter<String> adapterChannel =

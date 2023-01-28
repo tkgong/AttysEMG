@@ -23,19 +23,25 @@ ToggleButton allows you to have a different style when it's pressed and when it'
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1" />
-
         <Button
-            android:id="@+id/amplitude_Reset"
+            android:id="@+id/highlight"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:text="RESET" />
+            android:text="HIGHLIGHT"/>
+
+<!--        <Button-->
+<!--            android:id="@+id/amplitude_Reset"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:layout_weight="1"-->
+<!--            android:text="RESET" />-->
         <Button
             android:id="@+id/take_screenshot"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:text="SCREENSHOT"/>
+            android:text="SCREENSHOT" />
 
     </LinearLayout>
 
