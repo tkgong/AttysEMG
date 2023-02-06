@@ -23,14 +23,14 @@
             android:hint="LEFT"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textColor="@color/ap_white"
+            android:textColor="@color/ap_black"
             android:layout_weight="1"/>
         <EditText
             android:id="@+id/right_margin"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="@color/ap_white"
+            android:textColor="@color/ap_black"
             android:hint="RIGHT"/>
         
     </LinearLayout>

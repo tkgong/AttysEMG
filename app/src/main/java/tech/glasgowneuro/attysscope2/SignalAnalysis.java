@@ -34,19 +34,6 @@ public class SignalAnalysis {
         return nData == maxdata;
     }
 
-//    public float getRMS() { // delete it
-//        float r = 0;
-//        if (nData > 0) {
-//            for (int i = 0; i < nData; i++) {
-//                float f = data[i];
-//                r = r + f * f;
-//            }
-//            r = r / nData;
-//            r = (float) Math.sqrt(r);
-//        }
-//        return r;
-//    }
-
     public float getPeakToPeak() {
         float min = 1E10F;
         float max = -1E10F;

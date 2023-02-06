@@ -18,11 +18,12 @@ ToggleButton allows you to have a different style when it's pressed and when it'
 -->
 
 
-        <ToggleButton
-            android:id="@+id/amplitude_doRecord"
+        <Button
+            android:id="@+id/start_recording"
             android:layout_width="0dp"
             android:layout_height="40dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:text="START "/>
         <Button
             android:id="@+id/highlight"
             android:layout_width="0dp"
@@ -58,13 +59,21 @@ ToggleButton allows you to have a different style when it's pressed and when it'
             android:clickable="true"
             android:spinnerMode="dropdown" />
 
+<!--        <Spinner-->
+<!--            android:id="@+id/amplitude_window"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:clickable="true"-->
+<!--            android:spinnerMode="dropdown" />-->
         <Spinner
-            android:id="@+id/amplitude_window"
+            android:id="@+id/view_history"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:clickable="true"
-            android:spinnerMode="dropdown" />
+            android:spinnerMode="dropdown"
+            />
 
         <Spinner
             android:id="@+id/amplitude_channel"
@@ -76,21 +85,6 @@ ToggleButton allows you to have a different style when it's pressed and when it'
 
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="5dp"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="0dp"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text=" "/>
-    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

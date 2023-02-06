@@ -24,6 +24,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
@@ -65,9 +66,10 @@ public class AmplitudeFragment extends Fragment {
             "auto range", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
             "0.01", "0.005", "0.001", "0.0005", "0.0001"};
 
-    private static final String[] WINDOW_LENGTH = {"0.1 sec", "0.2 sec", "0.5 sec", "1 sec", "2 sec", "5 sec", "10 sec"};
-
-    private static final int DEFAULT_WINDOW_LENGTH = 3;
+//    private static final String[] WINDOW_LENGTH = {"0.1 sec", "0.2 sec", "0.5 sec", "1 sec", "2 sec", "5 sec", "10 sec"};
+//
+//    private static final int DEFAULT_WINDOW_LENGTH = 3;
+    private static final String[] PREVIOUS_EPOCHES = {"NONE", "10", "20", "30", "40","50", "ALL"};
 
     private int windowLength = 100;
 
@@ -120,12 +122,7 @@ public class AmplitudeFragment extends Fragment {
             amplitudeHistorySeries.removeLast();
         }
         amplitudeFullSeries = new SimpleXYSeries(" ");
-
-//        if (isRMSmode) {
-//            amplitudeHistorySeries.setTitle(units[channel] + " RMS");
-//        } else {
             amplitudeHistorySeries.setTitle(units[channel] + " pp");
-        //}
         amplitudePlot.setRangeLabel(units[channel]);
         amplitudePlot.setTitle(" ");
 
@@ -189,22 +186,23 @@ public class AmplitudeFragment extends Fragment {
         amplitudeHistorySeries = new SimpleXYSeries(" ");
         //amplitudeReadingText = view.findViewById(R.id.amplitude_valueTextView);
         //amplitudeReadingText.setText(String.format(Locale.US,"%04d", 0));
-        ToggleButton toggleButtonDoRecord = view.findViewById(R.id.amplitude_doRecord);
-        toggleButtonDoRecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                acceptData = isChecked;
-            }
-        });
-        toggleButtonDoRecord.setChecked(true);
+//        ToggleButton toggleButtonDoRecord = view.findViewById(R.id.amplitude_doRecord);
+//        toggleButtonDoRecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                acceptData = isChecked;
+//            }
+//        });
+//        toggleButtonDoRecord.setChecked(true);
 
-        /*ToggleButton toggleButtonRMS_pp = view.findViewById(R.id.amplitude_rms_pp);
-        toggleButtonRMS_pp.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                isRMSmode = isChecked;
+        Button startButton = view.findViewById(R.id.start_recording);
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 reset();
+                acceptData = true;
             }
         });
-        toggleButtonRMS_pp.setChecked(false);*/
+
 
         Button screenshotButton = view.findViewById(R.id.take_screenshot);
         screenshotButton.setOnClickListener(new View.OnClickListener() {
@@ -282,31 +280,64 @@ public class AmplitudeFragment extends Fragment {
         spinnerChannel.setBackgroundResource(android.R.drawable.btn_default);
         spinnerChannel.setSelection(AttysComm.INDEX_Analogue_channel_1);
 
-
-        Spinner spinnerWindow = view.findViewById(R.id.amplitude_window);
-        ArrayAdapter<String> adapterWindow = new ArrayAdapter<>(getContext(),
+        float winLen = 0.1f;
+        windowLength = (int) (winLen * samplingRate);
+        if (amplitudePlot != null) {
+            amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 20 * winLen);
+        }
+        Spinner spinnerHistory = view.findViewById(R.id.view_history);
+        ArrayAdapter<String> adapterHistory = new ArrayAdapter<>(getContext(),
                 android.R.layout.simple_spinner_dropdown_item,
-                WINDOW_LENGTH);
-        adapterWindow.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerWindow.setAdapter(adapterWindow);
-        spinnerWindow.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                PREVIOUS_EPOCHES);
+        adapterHistory.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerHistory.setAdapter(adapterHistory);
+        spinnerHistory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                float winLen = Float.parseFloat(WINDOW_LENGTH[position].split(" ")[0]);
-                windowLength = (int) (winLen * samplingRate);
-                //Log.d(TAG, "winlen=" + windowLength);
-                reset();
-                if (amplitudePlot != null) {
-                    amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 20 * winLen);
+                String item = parent.getItemAtPosition(position).toString();
+                if(item.equals("NONE")){
+                    Toast.makeText(parent.getContext(), "No Previous Epoch Displayed", Toast.LENGTH_SHORT).show();
                 }
+                else if (item.equals("ALL")){
+                    Toast.makeText(parent.getContext(),"Display All Previous Data Stored", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    Toast.makeText(parent.getContext(),"Display Previous" + item + "Epoch", Toast.LENGTH_SHORT).show();
+                }
+
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
             }
         });
-        spinnerWindow.setBackgroundResource(android.R.drawable.btn_default);
-        spinnerWindow.setSelection(DEFAULT_WINDOW_LENGTH);
+        spinnerHistory.setBackgroundResource(android.R.drawable.btn_default);
+        spinnerHistory.setSelection(0);
+//        Spinner spinnerWindow = view.findViewById(R.id.amplitude_window);
+//        ArrayAdapter<String> adapterWindow = new ArrayAdapter<>(getContext(),
+//                android.R.layout.simple_spinner_dropdown_item,
+//                WINDOW_LENGTH);
+//        adapterWindow.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//        spinnerWindow.setAdapter(adapterWindow);
+//        spinnerWindow.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//            @Override
+//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                float winLen = Float.parseFloat(WINDOW_LENGTH[position].split(" ")[0]);
+//                windowLength = (int) (winLen * samplingRate);
+//                //Log.d(TAG, "winlen=" + windowLength);
+//                reset();
+//                if (amplitudePlot != null) {
+//                    amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 20 * winLen);
+//                }
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parent) {
+//            }
+//        });
+//        spinnerWindow.setBackgroundResource(android.R.drawable.btn_default);
+//        spinnerWindow.setSelection(DEFAULT_WINDOW_LENGTH);
 
 
         amplitudePlot.addSeries(amplitudeHistorySeries,
@@ -411,12 +442,6 @@ public class AmplitudeFragment extends Fragment {
     private void updateStats() {
 
         double delta_t = (double) windowLength * (1.0 / samplingRate);
-
-//        if (isRMSmode) {
-//            if (signalAnalysis != null) {
-//                current_stat_result = signalAnalysis.getRMS(); // may not need to display RMS value
-//            }
-//        } else {
 
             if (signalAnalysis != null) {
                 current_stat_result = signalAnalysis.getPeakToPeak(); // peak-to-peak value of the signal -- wanted
