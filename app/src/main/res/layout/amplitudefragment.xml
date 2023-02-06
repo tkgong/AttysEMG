@@ -73,6 +73,7 @@ ToggleButton allows you to have a different style when it's pressed and when it'
             android:layout_weight="1"
             android:clickable="true"
             android:spinnerMode="dropdown"
+            android:textAlignment="center"
             />
 
         <Spinner
@@ -81,7 +82,7 @@ ToggleButton allows you to have a different style when it's pressed and when it'
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:clickable="true"
-            android:spinnerMode="dropdown" />
+            android:gravity="center"/>
 
     </LinearLayout>
 

@@ -69,7 +69,13 @@ public class AmplitudeFragment extends Fragment {
 //    private static final String[] WINDOW_LENGTH = {"0.1 sec", "0.2 sec", "0.5 sec", "1 sec", "2 sec", "5 sec", "10 sec"};
 //
 //    private static final int DEFAULT_WINDOW_LENGTH = 3;
-    private static final String[] PREVIOUS_EPOCHES = {"NONE", "10", "20", "30", "40","50", "ALL"};
+    private static final String[] PREVIOUS_EPOCHES = {"No Previous Epoch",
+        "10 Previous Epoch ",
+        "20 Previous Epoch",
+        "30 Previous Epoch",
+        "40 Previous Epoch",
+        "50 Previous Epoch",
+        "All Previous Epoch"};
 
     private int windowLength = 100;
 
@@ -290,21 +296,27 @@ public class AmplitudeFragment extends Fragment {
                 android.R.layout.simple_spinner_dropdown_item,
                 PREVIOUS_EPOCHES);
         adapterHistory.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerHistory.setPrompt("HISTORY");
         spinnerHistory.setAdapter(adapterHistory);
         spinnerHistory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String item = parent.getItemAtPosition(position).toString();
-                if(item.equals("NONE")){
+                if(item.equals("No Previous Epoch")){
                     Toast.makeText(parent.getContext(), "No Previous Epoch Displayed", Toast.LENGTH_SHORT).show();
                 }
-                else if (item.equals("ALL")){
+                else if (item.equals("All Previous Epoch")){
                     Toast.makeText(parent.getContext(),"Display All Previous Data Stored", Toast.LENGTH_SHORT).show();
                 }
                 else {
-                    Toast.makeText(parent.getContext(),"Display Previous" + item + "Epoch", Toast.LENGTH_SHORT).show();
+                    try {
+                        int nEpoch = Integer.parseInt(PREVIOUS_EPOCHES[position].split(" ")[0].substring(0, 2));
+                        Toast.makeText(parent.getContext(),"Display Previous" + " " + nEpoch + " " + "Epoch", Toast.LENGTH_SHORT).show();
+                    } catch (NumberFormatException e) {
+                        // Handle the exception here, for example by displaying an error message or using a default value
+                        Toast.makeText(getContext(), "The string cannot be parsed to a valid integer.", Toast.LENGTH_SHORT).show();
+                    }
                 }
-
             }
 
             @Override
