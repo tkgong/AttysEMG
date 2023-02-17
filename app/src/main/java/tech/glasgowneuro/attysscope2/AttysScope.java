@@ -124,11 +124,11 @@ public class AttysScope extends AppCompatActivity { // main activity
     private PendingIntent fgPendingIntent = null;
 
     public Ch2Converter ch2Converter = new Ch2Converter();
-
+    private  final float A_v = 2000.0f;
     private final Butterworth[] highpass = new Butterworth[2];
     private final Butterworth[] iirNotch = new Butterworth[2];
-    private final float[] gain = new float[AttysComm.NCHANNELS];
-    private final boolean[] invert = new boolean[AttysComm.NCHANNELS];
+    private final float[] gain = {A_v, A_v, 1.0f, 1.0f, 1.0f};
+    //    private final boolean[] invert = new boolean[AttysComm.NCHANNELS];
     private final int[] actualChannelIdx = new int[AttysComm.NCHANNELS];
 
     private final double notchBW = 2.5; // Hz
@@ -172,7 +172,9 @@ public class AttysScope extends AppCompatActivity { // main activity
 
     private int gpio0 = 0;
     private int gpio1 = 0;
-public static void verifyStoragePermission (Activity activity){
+
+
+    public static void verifyStoragePermission (Activity activity){
     int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
     if (permission != PackageManager.PERMISSION_GRANTED){
@@ -538,9 +540,9 @@ public static void verifyStoragePermission (Activity activity){
                         }
                         for (int j = 0; j < nCh; j++) {
                             float v = sample[j];
-                            if (invert[j]) {
-                                v = -v;
-                            }
+//                            if (invert[j]) {
+//                                v = -v;
+//                            }
                             if (j == theChannelWeDoAnalysis) {
                                 doAnalysis(v);
                             }
@@ -567,10 +569,9 @@ public static void verifyStoragePermission (Activity activity){
                                 tmpTick[nRealChN] = ch1Div * gain[AttysComm.INDEX_Analogue_channel_1];
                                 tmpLabels[nRealChN] = labels[AttysComm.INDEX_Analogue_channel_1];
                                 actualChannelIdx[nRealChN] = AttysComm.INDEX_Analogue_channel_1;
-                                // amplitute the signal
-                                tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_1] * 2000;
-
-                                //tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_1] * gain[AttysComm.INDEX_Analogue_channel_1];
+                                // amplifies the signal
+                                tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_1] * gain[AttysComm.INDEX_Analogue_channel_1];
+                                Toast.makeText(AttysScope.this,"The gain of Channel 1 is " + gain[AttysComm.INDEX_Analogue_channel_1], Toast.LENGTH_SHORT).show();
                             }
                         }
                         if (showCh2) {
@@ -584,6 +585,7 @@ public static void verifyStoragePermission (Activity activity){
 
                                 // amplitute the signal
                                 tmpSample[nRealChN++] = sample[AttysComm.INDEX_Analogue_channel_2] * gain[AttysComm.INDEX_Analogue_channel_2];
+                                Toast.makeText(AttysScope.this, "The gain of channel 2 is now" + gain[AttysComm.INDEX_Analogue_channel_2], Toast.LENGTH_SHORT).show();
                             }
                         }
 
@@ -754,7 +756,8 @@ public static void verifyStoragePermission (Activity activity){
 
         Toolbar myToolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
-
+        highpass1on();
+        highpass2on();
         progress = findViewById(R.id.indeterminateBar);
 
         for (int i = 0; i < 2; i++) {
@@ -806,11 +809,11 @@ public static void verifyStoragePermission (Activity activity){
     }
 
 
-    private void highpass1off() {
-        synchronized (highpass) {
-            highpass[0] = null;
-        }
-    }
+//    private void highpass1off() {
+//        synchronized (highpass) {
+//            highpass[0] = null;
+//        }
+//    }
 
 
     private void highpass2on() {
@@ -821,40 +824,40 @@ public static void verifyStoragePermission (Activity activity){
     }
 
 
-    private void highpass2off() {
-        synchronized (highpass) {
-            highpass[1] = null;
-        }
-    }
+//    private void highpass2off() {
+//        synchronized (highpass) {
+//            highpass[1] = null;
+//        }
+//    }
 
     // this is to turn on/off the high pass filters
-    private void checkMenuItems() {
-        if (menuItemHighpass1 != null) {
-            if (menuItemHighpass1.isChecked()) {
-                highpass1on();
-            } else {
-                highpass1off();
-            }
-        } else {
-            // default
-            highpass1on();
-        }
-
-        if (menuItemHighpass2 != null) {
-            if (ch2Converter.getRule() >= 0) {
-                menuItemHighpass2.setChecked(false);
-                textAnnotation = TextAnnotation.RMS;
-            }
-            if (menuItemHighpass2.isChecked()) {
-                highpass2on();
-            } else {
-                highpass2off();
-            }
-        } else {
-            // default
-            highpass2on();
-        }
-    }
+//    private void checkMenuItems() {
+//        if (menuItemHighpass1 != null) {
+//            if (menuItemHighpass1.isChecked()) {
+//                highpass1on();
+//            } else {
+//                highpass1off();
+//            }
+//        } else {
+//            // default
+//            highpass1on();
+//        }
+//
+//        if (menuItemHighpass2 != null) {
+//            if (ch2Converter.getRule() >= 0) {
+//                menuItemHighpass2.setChecked(false);
+//                textAnnotation = TextAnnotation.RMS;
+//            }
+//            if (menuItemHighpass2.isChecked()) {
+//                highpass2on();
+//            } else {
+//                highpass2off();
+//            }
+//        } else {
+//            // default
+//            highpass2on();
+//        }
+//    }
 
 
     private void noAttysFoundAlert() {
@@ -948,7 +951,7 @@ public static void verifyStoragePermission (Activity activity){
 
         getsetAttysPrefs();
 
-        checkMenuItems();
+//        checkMenuItems();
 
         if (showCh1) {
             theChannelWeDoAnalysis = AttysComm.INDEX_Analogue_channel_1;
@@ -1176,8 +1179,8 @@ public static void verifyStoragePermission (Activity activity){
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main_menu_attysscope, menu);
 
-        menuItemHighpass1 = menu.findItem(R.id.Ch1toggleDC);
-        menuItemHighpass2 = menu.findItem(R.id.Ch2toggleDC);
+//        menuItemHighpass1 = menu.findItem(R.id.Ch1toggleDC);
+//        menuItemHighpass2 = menu.findItem(R.id.Ch2toggleDC);
 
         menuItemMains1 = menu.findItem(R.id.Ch1notch);
         menuItemMains2 = menu.findItem(R.id.Ch2notch);
@@ -1255,29 +1258,30 @@ public static void verifyStoragePermission (Activity activity){
                 showCh2 = !showCh2;
                 item.setChecked(showCh2);
                 return true;
+
             case R.id.enterFilename:
                 if (!(dataRecorder.isRecording())) {
                     enterFilename();
                 }
                 return true;
 
-            case R.id.Ch1toggleDC:
-                item.setChecked(!item.isChecked());
-                if (item.isChecked()) {
-                    highpass1on();
-                } else {
-                    highpass1off();
-                }
-                return true;
-
-            case R.id.Ch2toggleDC:
-                item.setChecked(!item.isChecked());
-                if (item.isChecked()) {
-                    highpass2on();
-                } else {
-                    highpass2off();
-                }
-                return true;
+//            case R.id.Ch1toggleDC:
+//                item.setChecked(!item.isChecked());
+//                if (item.isChecked()) {
+//                    highpass1on();
+//                } else {
+//                    highpass1off();
+//                }
+//                return true;
+//
+//            case R.id.Ch2toggleDC:
+//                item.setChecked(!item.isChecked());
+//                if (item.isChecked()) {
+//                    highpass2on();
+//                } else {
+//                    highpass2off();
+//                }
+//                return true;
 
             case R.id.Ch1notch:
                 synchronized (iirNotch) {
@@ -1309,49 +1313,49 @@ public static void verifyStoragePermission (Activity activity){
                     item.setChecked(iirNotch[idx] != null);
                 }
                 return true;
+//
+//            case R.id.Ch1gain1:
+//            case R.id.Ch1gain2:
+//            case R.id.Ch1gain5:
+//            case R.id.Ch1gain10:
+//            case R.id.Ch1gain20:
+//            case R.id.Ch1gain50:
+//            case R.id.Ch1gain100:
+//            case R.id.Ch1gain200:
+//            case R.id.Ch1gain500:
+//            case R.id.Ch1gain1000:
+//            case R.id.Ch1gain2000:
+//                String t = item.getTitle().toString();
+//                int g = Integer.parseInt(t);
+//                gain[AttysComm.INDEX_Analogue_channel_1] = (float) g;
+//                Toast.makeText(getApplicationContext(),
+//                        String.format(Locale.getDefault(), "Channel 1 gain set to x%d", g), Toast.LENGTH_LONG).show();
+//                return true;
 
-            case R.id.Ch1gain1:
-            case R.id.Ch1gain2:
-            case R.id.Ch1gain5:
-            case R.id.Ch1gain10:
-            case R.id.Ch1gain20:
-            case R.id.Ch1gain50:
-            case R.id.Ch1gain100:
-            case R.id.Ch1gain200:
-            case R.id.Ch1gain500:
-            case R.id.Ch1gain1000:
-            case R.id.Ch1gain2000:
-                String t = item.getTitle().toString();
-                int g = Integer.parseInt(t);
-                gain[AttysComm.INDEX_Analogue_channel_1] = (float) g;
-                Toast.makeText(getApplicationContext(),
-                        String.format(Locale.getDefault(), "Channel 1 gain set to x%d", g), Toast.LENGTH_LONG).show();
-                return true;
-
-            case R.id.Ch2gain1:
-            case R.id.Ch2gain2:
-            case R.id.Ch2gain5:
-            case R.id.Ch2gain10:
-            case R.id.Ch2gain20:
-            case R.id.Ch2gain50:
-            case R.id.Ch2gain100:
-            case R.id.Ch2gain200:
-            case R.id.Ch2gain500:
-            case R.id.Ch2gain1000:
-            case R.id.Ch2gain2000:
-                t = item.getTitle().toString();
-                g = Integer.parseInt(t);
-                Toast.makeText(getApplicationContext(),
-                        String.format(Locale.getDefault(), "Channel 2 gain set to x%d", g), Toast.LENGTH_LONG).show();
-                gain[AttysComm.INDEX_Analogue_channel_2] = (float) g;
-                return true;
+//            case R.id.Ch2gain1:
+//            case R.id.Ch2gain2:
+//            case R.id.Ch2gain5:
+//            case R.id.Ch2gain10:
+//            case R.id.Ch2gain20:
+//            case R.id.Ch2gain50:
+//            case R.id.Ch2gain100:
+//            case R.id.Ch2gain200:
+//            case R.id.Ch2gain500:
+//            case R.id.Ch2gain1000:
+//            case R.id.Ch2gain2000:
+//                t = item.getTitle().toString();
+//                g = Integer.parseInt(t);
+//                Toast.makeText(getApplicationContext(),
+//                        String.format(Locale.getDefault(), "Channel 2 gain set to x%d", g), Toast.LENGTH_LONG).show();
+//                gain[AttysComm.INDEX_Analogue_channel_2] = (float) g;
+//                return true;
 
             case R.id.tb1:
             case R.id.tb2:
             case R.id.tb5:
             case R.id.tb10:
-                t = item.getTitle().toString();
-                g = Integer.parseInt(t);
+                String t = item.getTitle().toString();
+                int g = Integer.parseInt(t);
                 Toast.makeText(getApplicationContext(),
                         String.format(Locale.getDefault(), "Timebase set to %d secs/div", g), Toast.LENGTH_LONG).show();
                 timebase = g;

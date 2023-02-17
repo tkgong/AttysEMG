@@ -326,6 +326,9 @@ public class AmplitudeFragment extends Fragment {
         });
         spinnerHistory.setBackgroundResource(android.R.drawable.btn_default);
         spinnerHistory.setSelection(0);
+
+
+        
 //        Spinner spinnerWindow = view.findViewById(R.id.amplitude_window);
 //        ArrayAdapter<String> adapterWindow = new ArrayAdapter<>(getContext(),
 //                android.R.layout.simple_spinner_dropdown_item,
