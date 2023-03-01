@@ -18,15 +18,13 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:orientation="horizontal">
-
         <EditText
             android:id="@+id/left_margin"
+            android:hint="LEFT"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="LEFT"
-            android:textColor="@color/ap_black" />
-
+            android:textColor="@color/ap_black"
+            android:layout_weight="1"/>
         <EditText
             android:id="@+id/right_margin"
             android:layout_width="0dp"

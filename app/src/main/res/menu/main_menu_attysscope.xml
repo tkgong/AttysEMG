@@ -44,6 +44,12 @@
             <item
                 android:id="@+id/infoWindowAmplitude"
                 android:title="Signal stats" />
+<!--            <item-->
+<!--                android:id="@+id/infoWindowSpectrum"-->
+<!--                android:title="Frequency spectrum" />-->
+<!--            <item-->
+<!--                android:id="@+id/infoWindowHeartrate"-->
+<!--                android:title="Heart rate" />-->
         </menu>
     </item>
 
@@ -71,16 +77,16 @@
             android:id="@+id/showCh1"
             android:checked="true"
             android:title="ADC 1" />
-<!--        <item-->
-<!--            app:showAsAction="never"-->
-<!--            android:id="@+id/Ch1toggleDC"-->
-<!--            android:checked="true"-->
-<!--            android:title="ADC 1 DC filter" />-->
-<!--        <item-->
-<!--            app:showAsAction="never"-->
-<!--            android:id="@+id/Ch1invert"-->
-<!--            android:checked="false"-->
-<!--            android:title="ADC 1 invert" />-->
+        <item
+            app:showAsAction="never"
+            android:id="@+id/Ch1toggleDC"
+            android:checked="true"
+            android:title="ADC 1 DC filter" />
+        <item
+            app:showAsAction="never"
+            android:id="@+id/Ch1invert"
+            android:checked="false"
+            android:title="ADC 1 invert" />
         <item
             app:showAsAction="never"
             android:id="@+id/Ch1notch"
@@ -137,16 +143,16 @@
             android:id="@+id/showCh2"
             android:checked="true"
             android:title="ADC 2" />
-<!--        <item-->
-<!--            app:showAsAction="never"-->
-<!--            android:id="@+id/Ch2toggleDC"-->
-<!--            android:checked="true"-->
-<!--            android:title="ADC 2 DC filter" />-->
-<!--        <item-->
-<!--            app:showAsAction="never"-->
-<!--            android:id="@+id/Ch2invert"-->
-<!--            android:checked="false"-->
-<!--            android:title="ADC 2 invert" />-->
+        <item
+            app:showAsAction="never"
+            android:id="@+id/Ch2toggleDC"
+            android:checked="true"
+            android:title="ADC 2 DC filter" />
+        <item
+            app:showAsAction="never"
+            android:id="@+id/Ch2invert"
+            android:checked="false"
+            android:title="ADC 2 invert" />
         <item
             app:showAsAction="never"
             android:id="@+id/Ch2notch"
@@ -194,7 +200,6 @@
 <!--                android:title="2000" />-->
 <!--        </menu>-->
 <!--    </item>-->
-
     <item
         android:id="@+id/filebrowser"
         android:title="Share files"
