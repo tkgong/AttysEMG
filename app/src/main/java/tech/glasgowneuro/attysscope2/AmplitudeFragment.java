@@ -476,7 +476,7 @@ public class AmplitudeFragment extends Fragment {
 
         if (amplitudeHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "amplitudeHistorySeries == null"); // is this used to display previous epochs?
+                Log.v(TAG, "amplitudeHistorySeries == null");
             }
             return;
         }
