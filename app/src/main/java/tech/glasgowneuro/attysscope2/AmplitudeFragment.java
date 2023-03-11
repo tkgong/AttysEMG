@@ -47,11 +47,6 @@ import java.util.Date;
 import java.util.Locale;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
-
-/**
- * RMS / pp Fragment
- */
-
 public class AmplitudeFragment extends Fragment {
 
     String TAG = "AmplitudeFragment";
@@ -95,7 +90,7 @@ public class AmplitudeFragment extends Fragment {
 
     View view = null;
 
-    int samplingRate = 250; // SR = 250HZ, need to modify it for EMG recording
+    int samplingRate = 500; // SR = 250HZ, need to modify it for EMG recording
 
     /* The EMG frequency ranges vary from 0.01 Hz to 10 kHz, depending on the type of examination (invasive or noninvasive).
     The most useful and important frequency ranges are within the range from 50 to 150 Hz */
@@ -115,6 +110,7 @@ public class AmplitudeFragment extends Fragment {
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
     }
+    private boolean isStatic = false;
 
     public void reset() {
         ready = false;
@@ -127,6 +123,7 @@ public class AmplitudeFragment extends Fragment {
         for (int i = 0; i < n; i++) {
             amplitudeHistorySeries.removeLast();
         }
+        isStatic = false;
         amplitudeFullSeries = new SimpleXYSeries(" ");
             amplitudeHistorySeries.setTitle(units[channel] + " pp");
         amplitudePlot.setRangeLabel(units[channel]);
@@ -169,6 +166,10 @@ public class AmplitudeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
+
+        if (isStatic){
+            Toast.makeText(getContext(), "is Static is 1", Toast.LENGTH_SHORT).show();
+        }
 
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "creating Fragment");
@@ -350,8 +351,97 @@ public class AmplitudeFragment extends Fragment {
 //        });
 //        spinnerWindow.setBackgroundResource(android.R.drawable.btn_default);
 //        spinnerWindow.setSelection(DEFAULT_WINDOW_LENGTH);
+//
+//
 
+//        amplitudePlot.addSeries(amplitudeHistorySeries,
+//                new LineAndPointFormatter(
+//                        Color.rgb(100, 255, 255), null, null, null));
+//
+//        Paint paint = new Paint();
+//        paint.setColor(Color.argb(128, 0, 255, 0));
+//        amplitudePlot.getGraph().setDomainGridLinePaint(paint);
+//        amplitudePlot.getGraph().setRangeGridLinePaint(paint);
+//
+//        amplitudePlot.setDomainLabel("t/sec");
+//        amplitudePlot.setRangeLabel(" ");
+//
+//        amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.FIXED);
+//        amplitudePlot.setRangeUpperBoundary(1, BoundaryMode.AUTO);
+//
+//        XYGraphWidget.LineLabelRenderer lineLabelRendererY = new XYGraphWidget.LineLabelRenderer() {
+//            @Override
+//            public void drawLabel(Canvas canvas,
+//                                  XYGraphWidget.LineLabelStyle style,
+//                                  Number val, float x, float y, boolean isOrigin) {
+//                Rect bounds = new Rect();
+//                style.getPaint().getTextBounds("a", 0, 1, bounds);
+//                drawLabel(canvas, String.format(Locale.US,"%04.5f ", val.floatValue()),
+//                        style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
+//            }
+//        };
+//
+//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.LEFT, lineLabelRendererY);
+//        XYGraphWidget.LineLabelStyle lineLabelStyle = amplitudePlot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT);
+//        Rect bounds = new Rect();
+//        String dummyTxt = String.format(Locale.US,"%04.5f ", 100000.000599);
+//        lineLabelStyle.getPaint().getTextBounds(dummyTxt, 0, dummyTxt.length(), bounds);
+//        amplitudePlot.getGraph().setMarginLeft(bounds.width());
+//
+//        XYGraphWidget.LineLabelRenderer lineLabelRendererX = new XYGraphWidget.LineLabelRenderer() {
+//            @Override
+//            public void drawLabel(Canvas canvas,
+//                                  XYGraphWidget.LineLabelStyle style,
+//                                  Number val, float x, float y, boolean isOrigin) {
+//                if (!isOrigin) {
+//                    Rect bounds = new Rect();
+//                    style.getPaint().getTextBounds("a", 0, 1, bounds);
+//                    drawLabel(canvas, String.format(Locale.US,"%d", val.intValue()),
+//                            style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
+//                }
+//            }
+//        };
+//
+//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
 
+        setPlot();
+
+        Spinner spinnerMaxY = view.findViewById(R.id.amplitude_maxy);
+        ArrayAdapter<String> adapter1 = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_dropdown_item, MAXYTXT);
+        adapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMaxY.setAdapter(adapter1);
+        spinnerMaxY.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) {
+                    amplitudePlot.setRangeUpperBoundary(1, BoundaryMode.AUTO);
+                    amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.AUTO);
+                } else {
+                    Screensize screensize = new Screensize(getContext());
+                    amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.FIXED);
+                    if (screensize.isTablet()) {
+                        amplitudePlot.setRangeStep(StepMode.INCREMENT_BY_VAL, Float.parseFloat(MAXYTXT[position]) / 10);
+                    } else {
+                        amplitudePlot.setRangeStep(StepMode.INCREMENT_BY_VAL, Float.parseFloat(MAXYTXT[position]) / 10);
+                    }
+                    amplitudePlot.setRangeUpperBoundary(Float.parseFloat(MAXYTXT[position]), BoundaryMode.FIXED);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        spinnerMaxY.setBackgroundResource(android.R.drawable.btn_default);
+        spinnerMaxY.setSelection(0);
+
+        reset();
+
+        return view;
+
+    }
+
+    private void setPlot() {
         amplitudePlot.addSeries(amplitudeHistorySeries,
                 new LineAndPointFormatter(
                         Color.rgb(100, 255, 255), null, null, null));
@@ -402,41 +492,7 @@ public class AmplitudeFragment extends Fragment {
 
         amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
 
-        Spinner spinnerMaxY = view.findViewById(R.id.amplitude_maxy);
-        ArrayAdapter<String> adapter1 = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_dropdown_item, MAXYTXT);
-        adapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerMaxY.setAdapter(adapter1);
-        spinnerMaxY.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position == 0) {
-                    amplitudePlot.setRangeUpperBoundary(1, BoundaryMode.AUTO);
-                    amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.AUTO);
-                } else {
-                    Screensize screensize = new Screensize(getContext());
-                    amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.FIXED);
-                    if (screensize.isTablet()) {
-                        amplitudePlot.setRangeStep(StepMode.INCREMENT_BY_VAL, Float.parseFloat(MAXYTXT[position]) / 10);
-                    } else {
-                        amplitudePlot.setRangeStep(StepMode.INCREMENT_BY_VAL, Float.parseFloat(MAXYTXT[position]) / 10);
-                    }
-                    amplitudePlot.setRangeUpperBoundary(Float.parseFloat(MAXYTXT[position]), BoundaryMode.FIXED);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-        spinnerMaxY.setBackgroundResource(android.R.drawable.btn_default);
-        spinnerMaxY.setSelection(0);
-
-        reset();
-
-        return view;
-
     }
-
 
     public synchronized void addValue(final float[] sample) {
         if (!ready) return;
@@ -452,8 +508,9 @@ public class AmplitudeFragment extends Fragment {
                     }
                 }
             }
-            Toast.makeText(getContext(), "the iterator kz equals to " + kz, Toast.LENGTH_SHORT).show();
             acceptData = false;
+            isStatic = true;
+            updateStats();
         } else {
             if (signalAnalysis != null) {
                 signalAnalysis.addData(sample[channel]);
@@ -493,11 +550,18 @@ public class AmplitudeFragment extends Fragment {
             step++;
         }
 
+        if (isStatic) {
+            int nToRemove = amplitudeHistorySeries.size() - 15;
+            for (int i = 0; i < nToRemove; i++) {
+                amplitudeHistorySeries.removeFirst();
+            }
+        }
+        amplitudePlot.redraw();
         // add the latest history sample:
         amplitudeHistorySeries.addLast(step * delta_t, current_stat_result);
         amplitudeFullSeries.addLast(step * delta_t, current_stat_result);
         step++;
-        amplitudePlot.redraw();
+
 
         if (getActivity() != null) {
             getActivity().runOnUiThread(new Runnable() {
