@@ -7,8 +7,11 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.Shader;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.format.DateFormat;
@@ -34,8 +37,10 @@ import androidx.fragment.app.Fragment;
 
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
+import com.androidplot.xy.RectRegion;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.StepMode;
+import com.androidplot.xy.XValueMarker;
 import com.androidplot.xy.XYGraphWidget;
 import com.androidplot.xy.XYPlot;
 
@@ -43,8 +48,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import com.androidplot.xy.RectRegion;
+
 
 import tech.glasgowneuro.attyscomm.AttysComm;
 public class AmplitudeFragment extends Fragment {
@@ -80,6 +89,7 @@ public class AmplitudeFragment extends Fragment {
     private XYPlot amplitudePlot = null;
 
     private TextView amplitudeReadingText = null;
+    int leftMargin, rightMargin;
 
     private SignalAnalysis signalAnalysis = null;
 
@@ -242,12 +252,20 @@ public class AmplitudeFragment extends Fragment {
                 dialog.getWindow().setAttributes(lp);
                 EditText left_Margin = (EditText) dialogView.findViewById(R.id.left_margin);
                 String userInput_left = left_Margin.getText().toString().trim();
+                if (!userInput_left.isEmpty()) {
+                    leftMargin = Integer.parseInt(userInput_left);
+                }
                 EditText right_Margin = (EditText) dialogView.findViewById(R.id.right_margin);
                 String userInput_Right = right_Margin.getText().toString().trim();
+                if (!userInput_Right.isEmpty()) {
+                    rightMargin = Integer.parseInt(userInput_Right);
+                }
+
                 Button ok_Button = dialogView.findViewById(R.id.OK_Button);
                 ok_Button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+//                        highlightPlot(amplitudePlot, leftMargin, rightMargin);
                         dialog.dismiss();
                     }
                 });
@@ -353,57 +371,6 @@ public class AmplitudeFragment extends Fragment {
 //        spinnerWindow.setSelection(DEFAULT_WINDOW_LENGTH);
 //
 //
-
-//        amplitudePlot.addSeries(amplitudeHistorySeries,
-//                new LineAndPointFormatter(
-//                        Color.rgb(100, 255, 255), null, null, null));
-//
-//        Paint paint = new Paint();
-//        paint.setColor(Color.argb(128, 0, 255, 0));
-//        amplitudePlot.getGraph().setDomainGridLinePaint(paint);
-//        amplitudePlot.getGraph().setRangeGridLinePaint(paint);
-//
-//        amplitudePlot.setDomainLabel("t/sec");
-//        amplitudePlot.setRangeLabel(" ");
-//
-//        amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.FIXED);
-//        amplitudePlot.setRangeUpperBoundary(1, BoundaryMode.AUTO);
-//
-//        XYGraphWidget.LineLabelRenderer lineLabelRendererY = new XYGraphWidget.LineLabelRenderer() {
-//            @Override
-//            public void drawLabel(Canvas canvas,
-//                                  XYGraphWidget.LineLabelStyle style,
-//                                  Number val, float x, float y, boolean isOrigin) {
-//                Rect bounds = new Rect();
-//                style.getPaint().getTextBounds("a", 0, 1, bounds);
-//                drawLabel(canvas, String.format(Locale.US,"%04.5f ", val.floatValue()),
-//                        style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
-//            }
-//        };
-//
-//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.LEFT, lineLabelRendererY);
-//        XYGraphWidget.LineLabelStyle lineLabelStyle = amplitudePlot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT);
-//        Rect bounds = new Rect();
-//        String dummyTxt = String.format(Locale.US,"%04.5f ", 100000.000599);
-//        lineLabelStyle.getPaint().getTextBounds(dummyTxt, 0, dummyTxt.length(), bounds);
-//        amplitudePlot.getGraph().setMarginLeft(bounds.width());
-//
-//        XYGraphWidget.LineLabelRenderer lineLabelRendererX = new XYGraphWidget.LineLabelRenderer() {
-//            @Override
-//            public void drawLabel(Canvas canvas,
-//                                  XYGraphWidget.LineLabelStyle style,
-//                                  Number val, float x, float y, boolean isOrigin) {
-//                if (!isOrigin) {
-//                    Rect bounds = new Rect();
-//                    style.getPaint().getTextBounds("a", 0, 1, bounds);
-//                    drawLabel(canvas, String.format(Locale.US,"%d", val.intValue()),
-//                            style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
-//                }
-//            }
-//        };
-//
-//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
-
         setPlot();
 
         Spinner spinnerMaxY = view.findViewById(R.id.amplitude_maxy);
@@ -493,13 +460,11 @@ public class AmplitudeFragment extends Fragment {
         amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
 
     }
-
     public synchronized void addValue(final float[] sample) {
         if (!ready) return;
         if (!acceptData) return;
         if (sample[AttysComm.INDEX_GPIO0] != 0){
-            int kz;
-            for (kz = 0; kz < 15; kz++) {
+            for (int i = 0; i < 15; i++) {
                 if (signalAnalysis != null) {
                     signalAnalysis.addData(sample[channel]);
                     if (signalAnalysis.bufferFull()) {
@@ -555,6 +520,7 @@ public class AmplitudeFragment extends Fragment {
             for (int i = 0; i < nToRemove; i++) {
                 amplitudeHistorySeries.removeFirst();
             }
+            isStatic = false;
         }
         amplitudePlot.redraw();
         // add the latest history sample:
@@ -575,4 +541,20 @@ public class AmplitudeFragment extends Fragment {
             });
         }
     }
+    private void highlightPlot(XYPlot plot, int leftMargin, int rightMargin) {
+        // Define the colors for the gradient
+        int[] colors = {Color.YELLOW, Color.YELLOW};
+        // Define the positions for the gradient
+        float[] positions = {(float) leftMargin / plot.getWidth(), (float) rightMargin / plot.getWidth()};
+
+        // Create the paint object with the linear gradient
+        Paint bgPaint = new Paint();
+        bgPaint.setShader(new LinearGradient(0, 0, 0, plot.getHeight(), colors, positions, Shader.TileMode.CLAMP));
+
+        // Set the background paint of the graph widget to the linear gradient paint
+        plot.getGraph().setBackgroundPaint(bgPaint);
+    }
+
+
+
 }
