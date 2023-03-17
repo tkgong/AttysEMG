@@ -63,9 +63,7 @@ public class AmplitudeFragment extends Fragment {
     int channel = AttysComm.INDEX_Analogue_channel_1;
 
     final int nSampleBufferSize = 100;
-
-    //private boolean isRMSmode = false;
-
+    float[] staticData = new float[18];
     private static final String[] MAXYTXT = {
             "auto range", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
             "0.01", "0.005", "0.001", "0.0005", "0.0001"};
@@ -460,11 +458,12 @@ public class AmplitudeFragment extends Fragment {
         amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
 
     }
+
     public synchronized void addValue(final float[] sample) {
         if (!ready) return;
         if (!acceptData) return;
         if (sample[AttysComm.INDEX_GPIO0] != 0){
-            for (int i = 0; i < 15; i++) {
+            for (int i = 0; i < 15; i++) { // continue to add 15 samples after the trigger
                 if (signalAnalysis != null) {
                     signalAnalysis.addData(sample[channel]);
                     if (signalAnalysis.bufferFull()) {
@@ -473,9 +472,9 @@ public class AmplitudeFragment extends Fragment {
                     }
                 }
             }
-            acceptData = false;
-            isStatic = true;
-            updateStats();
+            acceptData = false; //after 15 samples, stop adding samples anymore
+            isStatic = true; // set the flag to true
+            updateStats(); // update amplitudeHistorySeries and keep only last 18 samples using this function
         } else {
             if (signalAnalysis != null) {
                 signalAnalysis.addData(sample[channel]);
@@ -515,18 +514,20 @@ public class AmplitudeFragment extends Fragment {
             step++;
         }
 
-        if (isStatic) {
-            int nToRemove = amplitudeHistorySeries.size() - 15;
-            for (int i = 0; i < nToRemove; i++) {
-                amplitudeHistorySeries.removeFirst();
-            }
-            isStatic = false;
-        }
-        amplitudePlot.redraw();
         // add the latest history sample:
         amplitudeHistorySeries.addLast(step * delta_t, current_stat_result);
         amplitudeFullSeries.addLast(step * delta_t, current_stat_result);
         step++;
+
+        if (isStatic) {
+            int nToRemove = amplitudeHistorySeries.size() - 18;
+            for (int i = 0; i < nToRemove; i++) {
+                amplitudeHistorySeries.removeFirst();
+            }
+            isStatic = false;
+        } // keeps last 18 samples only for static plot
+        amplitudePlot.redraw();
+
 
 
         if (getActivity() != null) {
