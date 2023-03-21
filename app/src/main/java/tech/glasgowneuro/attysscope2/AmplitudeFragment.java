@@ -63,7 +63,6 @@ public class AmplitudeFragment extends Fragment {
     int channel = AttysComm.INDEX_Analogue_channel_1;
 
     final int nSampleBufferSize = 100;
-    float[] staticData = new float[18];
     private static final String[] MAXYTXT = {
             "auto range", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
             "0.01", "0.005", "0.001", "0.0005", "0.0001"};
@@ -82,7 +81,9 @@ public class AmplitudeFragment extends Fragment {
     private int windowLength = 100;
 
     private SimpleXYSeries amplitudeHistorySeries;
+    private SimpleXYSeries amplitudeHistorySeries2;
     private SimpleXYSeries amplitudeFullSeries = null;
+    private SimpleXYSeries amplitudeFullSeries2 = null;
 
     private XYPlot amplitudePlot = null;
 
@@ -104,8 +105,10 @@ public class AmplitudeFragment extends Fragment {
     The most useful and important frequency ranges are within the range from 50 to 150 Hz */
 
     int step = 0;
+    int step2 = 0;
 
     float current_stat_result = 0;
+    float current_stat_result2 = 0;
 
     boolean ready = false;
 
@@ -126,14 +129,21 @@ public class AmplitudeFragment extends Fragment {
         signalAnalysis = new SignalAnalysis(windowLength); // windowLength == 100
 
         step = 0;
+        step2 = 0;
 
         int n = amplitudeHistorySeries.size();
         for (int i = 0; i < n; i++) {
             amplitudeHistorySeries.removeLast();
         }
+        int m = amplitudeHistorySeries2.size();
+        for (int j = 0; j < m; j ++){
+            amplitudeHistorySeries2.removeLast();
+        }
         isStatic = false;
         amplitudeFullSeries = new SimpleXYSeries(" ");
             amplitudeHistorySeries.setTitle(units[channel] + " pp");
+        amplitudeFullSeries2 = new SimpleXYSeries(" ");
+            amplitudeHistorySeries2.setTitle(units[channel] + "pp");
         amplitudePlot.setRangeLabel(units[channel]);
         amplitudePlot.setTitle(" ");
 
@@ -174,10 +184,10 @@ public class AmplitudeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
-
-        if (isStatic){
-            Toast.makeText(getContext(), "is Static is 1", Toast.LENGTH_SHORT).show();
-        }
+//
+//        if (isStatic){
+//            Toast.makeText(getContext(), "is Static is 1", Toast.LENGTH_SHORT).show();
+//        }
 
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "creating Fragment");
@@ -199,6 +209,7 @@ public class AmplitudeFragment extends Fragment {
         // setup the APR Levels plot:
         amplitudePlot = view.findViewById(R.id.amplitude_PlotView);
         amplitudeHistorySeries = new SimpleXYSeries(" ");
+      amplitudeHistorySeries2 = new SimpleXYSeries(" ");
         //amplitudeReadingText = view.findViewById(R.id.amplitude_valueTextView);
         //amplitudeReadingText.setText(String.format(Locale.US,"%04d", 0));
 //        ToggleButton toggleButtonDoRecord = view.findViewById(R.id.amplitude_doRecord);
@@ -293,7 +304,10 @@ public class AmplitudeFragment extends Fragment {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 channel = position;
-                reset();
+                if(!isStatic) {
+                    reset();
+                }
+                updatePlot(channel);
             }
 
             @Override
@@ -343,32 +357,6 @@ public class AmplitudeFragment extends Fragment {
         });
         spinnerHistory.setBackgroundResource(android.R.drawable.btn_default);
         spinnerHistory.setSelection(0);
-//        Spinner spinnerWindow = view.findViewById(R.id.amplitude_window);
-//        ArrayAdapter<String> adapterWindow = new ArrayAdapter<>(getContext(),
-//                android.R.layout.simple_spinner_dropdown_item,
-//                WINDOW_LENGTH);
-//        adapterWindow.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//        spinnerWindow.setAdapter(adapterWindow);
-//        spinnerWindow.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//            @Override
-//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//                float winLen = Float.parseFloat(WINDOW_LENGTH[position].split(" ")[0]);
-//                windowLength = (int) (winLen * samplingRate);
-//                //Log.d(TAG, "winlen=" + windowLength);
-//                reset();
-//                if (amplitudePlot != null) {
-//                    amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 20 * winLen);
-//                }
-//            }
-//
-//            @Override
-//            public void onNothingSelected(AdapterView<?> parent) {
-//            }
-//        });
-//        spinnerWindow.setBackgroundResource(android.R.drawable.btn_default);
-//        spinnerWindow.setSelection(DEFAULT_WINDOW_LENGTH);
-//
-//
         setPlot();
 
         Spinner spinnerMaxY = view.findViewById(R.id.amplitude_maxy);
@@ -405,12 +393,7 @@ public class AmplitudeFragment extends Fragment {
         return view;
 
     }
-
     private void setPlot() {
-        amplitudePlot.addSeries(amplitudeHistorySeries,
-                new LineAndPointFormatter(
-                        Color.rgb(100, 255, 255), null, null, null));
-
         Paint paint = new Paint();
         paint.setColor(Color.argb(128, 0, 255, 0));
         amplitudePlot.getGraph().setDomainGridLinePaint(paint);
@@ -456,8 +439,85 @@ public class AmplitudeFragment extends Fragment {
         };
 
         amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
-
     }
+
+    private void updatePlot(int channel) {
+        if (channel == AttysComm.INDEX_Analogue_channel_1) {
+            amplitudePlot.clear();
+            amplitudePlot.addSeries(amplitudeHistorySeries,
+                    new LineAndPointFormatter(
+                            Color.rgb(100, 255, 255), null, null, null));
+        } else if (channel == AttysComm.INDEX_Analogue_channel_2) {
+            amplitudePlot.clear();
+            amplitudePlot.addSeries(amplitudeHistorySeries2,
+                    new LineAndPointFormatter(
+                            Color.rgb(255, 100, 255), null, null, null));
+        }
+        amplitudePlot.redraw();
+    }
+//    private void setPlot() {
+////        if(channel == AttysComm.INDEX_Analogue_channel_1){
+////            Toast.makeText(getContext(), "channel is " + channel, Toast.LENGTH_SHORT).show();
+//            amplitudePlot.addSeries(amplitudeHistorySeries,
+//                new LineAndPointFormatter(
+//                        Color.rgb(100, 255, 255), null, null, null));
+////        else if (channel == AttysComm.INDEX_Analogue_channel_2){
+////            Toast.makeText(getContext(), "channel is " + channel, Toast.LENGTH_SHORT).show();
+////            amplitudePlot.addSeries(amplitudeHistorySeries2,
+////                    new LineAndPointFormatter(
+////                            Color.rgb(255, 100, 255), null, null, null));
+////        }
+////        else{
+////            Toast.makeText(getContext(), "Are We in This Condition?" , Toast.LENGTH_SHORT).show();
+////        }
+//
+//        Paint paint = new Paint();
+//        paint.setColor(Color.argb(128, 0, 255, 0));
+//        amplitudePlot.getGraph().setDomainGridLinePaint(paint);
+//        amplitudePlot.getGraph().setRangeGridLinePaint(paint);
+//
+//        amplitudePlot.setDomainLabel("t/sec");
+//        amplitudePlot.setRangeLabel(" ");
+//
+//        amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.FIXED);
+//        amplitudePlot.setRangeUpperBoundary(1, BoundaryMode.AUTO);
+//
+//        XYGraphWidget.LineLabelRenderer lineLabelRendererY = new XYGraphWidget.LineLabelRenderer() {
+//            @Override
+//            public void drawLabel(Canvas canvas,
+//                                  XYGraphWidget.LineLabelStyle style,
+//                                  Number val, float x, float y, boolean isOrigin) {
+//                Rect bounds = new Rect();
+//                style.getPaint().getTextBounds("a", 0, 1, bounds);
+//                drawLabel(canvas, String.format(Locale.US,"%04.5f ", val.floatValue()),
+//                        style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
+//            }
+//        };
+//
+//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.LEFT, lineLabelRendererY);
+//        XYGraphWidget.LineLabelStyle lineLabelStyle = amplitudePlot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT);
+//        Rect bounds = new Rect();
+//        String dummyTxt = String.format(Locale.US,"%04.5f ", 100000.000599);
+//        lineLabelStyle.getPaint().getTextBounds(dummyTxt, 0, dummyTxt.length(), bounds);
+//        amplitudePlot.getGraph().setMarginLeft(bounds.width());
+//
+//        XYGraphWidget.LineLabelRenderer lineLabelRendererX = new XYGraphWidget.LineLabelRenderer() {
+//            @Override
+//            public void drawLabel(Canvas canvas,
+//                                  XYGraphWidget.LineLabelStyle style,
+//                                  Number val, float x, float y, boolean isOrigin) {
+//                if (!isOrigin) {
+//                    Rect bounds = new Rect();
+//                    style.getPaint().getTextBounds("a", 0, 1, bounds);
+//                    drawLabel(canvas, String.format(Locale.US,"%d", val.intValue()),
+//                            style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
+//                }
+//            }
+//        };
+//
+//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
+//
+//    }
 
     public synchronized void addValue(final float[] sample) {
         if (!ready) return;
@@ -465,34 +525,42 @@ public class AmplitudeFragment extends Fragment {
         if (sample[AttysComm.INDEX_GPIO0] != 0){
             for (int i = 0; i < 15; i++) { // continue to add 15 samples after the trigger
                 if (signalAnalysis != null) {
-                    signalAnalysis.addData(sample[channel]);
+                    signalAnalysis.addData(sample[AttysComm.INDEX_Analogue_channel_1]);
+                    signalAnalysis.addData2(sample[AttysComm.INDEX_Analogue_channel_2]);
                     if (signalAnalysis.bufferFull()) {
                         updateStats();
                         signalAnalysis.reset();
+                    }
+                    if (signalAnalysis.bufferFull2()){
+                        updateStats2();
+                        signalAnalysis.reset2();
                     }
                 }
             }
             acceptData = false; //after 15 samples, stop adding samples anymore
             isStatic = true; // set the flag to true
-            updateStats(); // update amplitudeHistorySeries and keep only last 18 samples using this function
+            updateStats();
+            updateStats2();// update amplitudeHistorySeries and keep only last 18 samples using this function
         } else {
             if (signalAnalysis != null) {
-                signalAnalysis.addData(sample[channel]);
+                signalAnalysis.addData(sample[AttysComm.INDEX_Analogue_channel_1]);
+                signalAnalysis.addData2(sample[AttysComm.INDEX_Analogue_channel_2]);
                 if (signalAnalysis.bufferFull()) {
                     updateStats();
+                    updateStats2();
                     signalAnalysis.reset();
+                    signalAnalysis.reset2();
                 }
             }
         }
     }
-
     private void updateStats() {
 
         double delta_t = (double) windowLength * (1.0 / samplingRate);
 
-            if (signalAnalysis != null) {
-                current_stat_result = signalAnalysis.getPeakToPeak(); // peak-to-peak value of the signal -- wanted
-            }
+        if (signalAnalysis != null) {
+            current_stat_result = signalAnalysis.getPeakToPeak(); // peak-to-peak value of the signal -- wanted
+        }
         //}
 
         if (amplitudeHistorySeries == null) {
@@ -524,7 +592,6 @@ public class AmplitudeFragment extends Fragment {
             for (int i = 0; i < nToRemove; i++) {
                 amplitudeHistorySeries.removeFirst();
             }
-            isStatic = false;
         } // keeps last 18 samples only for static plot
         amplitudePlot.redraw();
 
@@ -535,13 +602,71 @@ public class AmplitudeFragment extends Fragment {
                 @Override
                 public void run() {
                     if (amplitudeReadingText != null) {
-                        amplitudeReadingText.setText(String.format(Locale.US,"%1.05f %s pp", current_stat_result, units[channel]));
+                        amplitudeReadingText.setText(String.format(Locale.US,"%1.05f %s pp", current_stat_result, units[AttysComm.INDEX_Analogue_channel_1]));
 
                     }
                 }
             });
         }
     }
+
+    private void updateStats2() {
+
+        double delta_t = (double) windowLength * (1.0 / samplingRate);
+
+        if (signalAnalysis != null) {
+            current_stat_result2 = signalAnalysis.getPeakToPeak2(); // peak-to-peak value of the signal -- wanted
+        }
+        //}
+
+        if (amplitudeHistorySeries2 == null) {
+            if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                Log.v(TAG, "amplitudeHistorySeries2 == null");
+            }
+            return;
+        }
+
+        // get rid the oldest sample in history:
+        if (amplitudeHistorySeries2.size() > nSampleBufferSize) {
+            amplitudeHistorySeries2.removeFirst();
+        }
+
+        int n = nSampleBufferSize - amplitudeHistorySeries2.size();
+        for (int i = 0; i < n; i++) {
+            // add the latest history sample:
+            amplitudeHistorySeries2.addLast(step2 * delta_t, current_stat_result2);
+            step2++;
+        }
+
+        // add the latest history sample:
+        amplitudeHistorySeries2.addLast(step2 * delta_t, current_stat_result2);
+        amplitudeFullSeries2.addLast(step2 * delta_t, current_stat_result2);
+        step2 ++;
+
+        if (isStatic) {
+            int nToRemove = amplitudeHistorySeries2.size() - 18;
+            for (int i = 0; i < nToRemove; i++) {
+                amplitudeHistorySeries2.removeFirst();
+            }
+        } // keeps last 18 samples only for static plot
+
+        amplitudePlot.redraw();
+
+
+
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (amplitudeReadingText != null) {
+                        amplitudeReadingText.setText(String.format(Locale.US,"%1.05f %s pp", current_stat_result, units[AttysComm.INDEX_Analogue_channel_2]));
+
+                    }
+                }
+            });
+        }
+    }
+
     private void highlightPlot(XYPlot plot, int leftMargin, int rightMargin) {
         // Define the colors for the gradient
         int[] colors = {Color.YELLOW, Color.YELLOW};
