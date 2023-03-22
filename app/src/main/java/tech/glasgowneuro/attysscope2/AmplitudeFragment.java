@@ -25,6 +25,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.SimpleExpandableListAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -61,7 +62,6 @@ public class AmplitudeFragment extends Fragment {
     String TAG = "AmplitudeFragment";
 
     int channel = AttysComm.INDEX_Analogue_channel_1;
-
     final int nSampleBufferSize = 100;
     private static final String[] MAXYTXT = {
             "auto range", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
@@ -70,14 +70,9 @@ public class AmplitudeFragment extends Fragment {
 //    private static final String[] WINDOW_LENGTH = {"0.1 sec", "0.2 sec", "0.5 sec", "1 sec", "2 sec", "5 sec", "10 sec"};
 //
 //    private static final int DEFAULT_WINDOW_LENGTH = 3;
-    private static final String[] PREVIOUS_EPOCHES = {"No Previous Epoch",
-        "10 Previous Epoch ",
-        "20 Previous Epoch",
-        "30 Previous Epoch",
-        "40 Previous Epoch",
-        "50 Previous Epoch",
-        "All Previous Epoch"};
-
+    int nEpoch = 0;
+    final int maxEpoch = 50;
+    int count = 50;
     private int windowLength = 100;
 
     private SimpleXYSeries amplitudeHistorySeries;
@@ -109,7 +104,8 @@ public class AmplitudeFragment extends Fragment {
 
     float current_stat_result = 0;
     float current_stat_result2 = 0;
-
+    float[][] previousEpoch = new float [50][18];
+    float[][] previousEpoch2 = new float [50][18];
     boolean ready = false;
 
     boolean acceptData = false;
@@ -230,13 +226,13 @@ public class AmplitudeFragment extends Fragment {
         });
 
 
-        Button screenshotButton = view.findViewById(R.id.take_screenshot);
-        screenshotButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                takeScreenShot(getActivity().getWindow().getDecorView().getRootView(), "Screenshot");
-            }
-        });
+//        Button screenshotButton = view.findViewById(R.id.take_screenshot);
+//        screenshotButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                takeScreenShot(getActivity().getWindow().getDecorView().getRootView(), "Screenshot");
+//            }
+//        });
 //        Button resetButton = view.findViewById(R.id.amplitude_Reset);
 //        resetButton.setOnClickListener(new View.OnClickListener() {
 //            public void onClick(View v) {
@@ -244,6 +240,29 @@ public class AmplitudeFragment extends Fragment {
 //            }
 //
 //        });
+        Button saveButton = view.findViewById(R.id.save_history);
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                saveEpoch(isStatic, amplitudeHistorySeries, previousEpoch, nEpoch);
+                saveEpoch(isStatic, amplitudeHistorySeries2, previousEpoch2, nEpoch);
+                nEpoch ++;
+                count ++;
+                if(nEpoch == maxEpoch) {
+                    nEpoch = 0; // populate the array from the beginning
+                }
+            }
+        });
+
+        Button showHistoryButton = view.findViewById(R.id.show_history);
+        showHistoryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addPreviousEpoch(count, channel);
+            }
+        });
+
+
         Button highlightButton = view.findViewById(R.id.highlight);
         highlightButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -322,41 +341,42 @@ public class AmplitudeFragment extends Fragment {
         if (amplitudePlot != null) {
             amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 20 * winLen);
         }
-        Spinner spinnerHistory = view.findViewById(R.id.view_history);
-        ArrayAdapter<String> adapterHistory = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_spinner_dropdown_item,
-                PREVIOUS_EPOCHES);
-        adapterHistory.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerHistory.setPrompt("HISTORY");
-        spinnerHistory.setAdapter(adapterHistory);
-        spinnerHistory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String item = parent.getItemAtPosition(position).toString();
-                if(item.equals("No Previous Epoch")){
-                    Toast.makeText(parent.getContext(), "No Previous Epoch Displayed", Toast.LENGTH_SHORT).show();
-                }
-                else if (item.equals("All Previous Epoch")){
-                    Toast.makeText(parent.getContext(),"Display All Previous Data Stored", Toast.LENGTH_SHORT).show();
-                }
-                else {
-                    try {
-                        int nEpoch = Integer.parseInt(PREVIOUS_EPOCHES[position].split(" ")[0].substring(0, 2));
-                        Toast.makeText(parent.getContext(),"Display Previous" + " " + nEpoch + " " + "Epoch", Toast.LENGTH_SHORT).show();
-                    } catch (NumberFormatException e) {
-                        // Handle the exception here, for example by displaying an error message or using a default value
-                        Toast.makeText(getContext(), "The string cannot be parsed to a valid integer.", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
+//        Spinner spinnerHistory = view.findViewById(R.id.view_history);
+//        ArrayAdapter<String> adapterHistory = new ArrayAdapter<>(getContext(),
+//                android.R.layout.simple_spinner_dropdown_item,
+//                PREVIOUS_EPOCHES);
+//        adapterHistory.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//        spinnerHistory.setPrompt("HISTORY");
+//        spinnerHistory.setAdapter(adapterHistory);
+//        spinnerHistory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//            @Override
+//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                String item = parent.getItemAtPosition(position).toString();
+//                if(item.equals("No Previous Epoch")){
+//                    Toast.makeText(parent.getContext(), "No Previous Epoch Displayed", Toast.LENGTH_SHORT).show();
+//                }
+//                else if (item.equals("All Previous Epoch")){
+//                    Toast.makeText(parent.getContext(),"Display All Previous Data Stored", Toast.LENGTH_SHORT).show();
+//                }
+//                else {
+//                    try {
+//                        int nEpoch = Integer.parseInt(PREVIOUS_EPOCHES[position].split(" ")[0].substring(0, 2));
+//                        Toast.makeText(parent.getContext(),"Display Previous" + " " + nEpoch + " " + "Epoch", Toast.LENGTH_SHORT).show();
+//                    } catch (NumberFormatException e) {
+//                        // Handle the exception here, for example by displaying an error message or using a default value
+//                        Toast.makeText(getContext(), "The string cannot be parsed to a valid integer.", Toast.LENGTH_SHORT).show();
+//                    }
+//                }
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parent) {
+//                // Do nothing
+//            }
+//        });
+//        spinnerHistory.setBackgroundResource(android.R.drawable.btn_default);
+//        spinnerHistory.setSelection(0);
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // Do nothing
-            }
-        });
-        spinnerHistory.setBackgroundResource(android.R.drawable.btn_default);
-        spinnerHistory.setSelection(0);
         setPlot();
 
         Spinner spinnerMaxY = view.findViewById(R.id.amplitude_maxy);
@@ -667,7 +687,32 @@ public class AmplitudeFragment extends Fragment {
         }
     }
 
-    private void highlightPlot(XYPlot plot, int leftMargin, int rightMargin) {
+    private void saveEpoch (boolean isStatic, SimpleXYSeries amplitudeHistorySeries, float[][] previousEpoch, int nEpoch){
+        if (!isStatic){
+            Log.v(TAG, "realtime plot cannot be saved!");
+            return;
+        }
+
+        if (previousEpoch[0].length != amplitudeHistorySeries.size()) {
+            throw new IllegalArgumentException("Array dimensions do not match");
+        }
+        else {
+            for (int i = 0; i < previousEpoch[0].length; i++) {
+                Number yValue = amplitudeHistorySeries.getY(i);
+                previousEpoch[nEpoch][i] = yValue.floatValue();
+            }
+            Toast.makeText(getActivity(), "saved!", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
+    private void highlightPlot(XYPlot plot, int leftMargin, int rightMargin, boolean isStatic) {
+
+        if (!isStatic){
+            throw new IllegalArgumentException("CANNOT ANNOTATE THE REALTIME PLOT");
+        }
+
+
         // Define the colors for the gradient
         int[] colors = {Color.YELLOW, Color.YELLOW};
         // Define the positions for the gradient
@@ -680,7 +725,26 @@ public class AmplitudeFragment extends Fragment {
         // Set the background paint of the graph widget to the linear gradient paint
         plot.getGraph().setBackgroundPaint(bgPaint);
     }
+    private void addPreviousEpoch(int count, int channel){
+        SimpleXYSeries[] previousSeries = new SimpleXYSeries[50];
+        if(count < 50){ // when we don't have 50 epoch, plot all we have
+            if (channel == AttysComm.INDEX_Analogue_channel_1){ // add the arrays from channel 1
 
+            }
+            else if (channel == AttysComm.INDEX_Analogue_channel_2){ // add the arrays from channel 2
 
+            }
+        }
+        else { // when count >50, plot previous 50 plots
+            if (channel == AttysComm.INDEX_Analogue_channel_1){
+
+            }
+            else if (channel == AttysComm.INDEX_Analogue_channel_2){
+
+            }
+
+        }
+
+    }
 
 }
