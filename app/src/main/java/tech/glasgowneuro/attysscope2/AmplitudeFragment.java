@@ -50,9 +50,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
+
 import com.androidplot.xy.RectRegion;
 
 
@@ -64,21 +67,26 @@ public class AmplitudeFragment extends Fragment {
     int channel = AttysComm.INDEX_Analogue_channel_1;
     final int nSampleBufferSize = 100;
     private static final String[] MAXYTXT = {
-            "auto range", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
+            "auto", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
             "0.01", "0.005", "0.001", "0.0005", "0.0001"};
+    private static final String[] historyStatus = {
+            "OFF",
+            "ON"
+    };
 
 //    private static final String[] WINDOW_LENGTH = {"0.1 sec", "0.2 sec", "0.5 sec", "1 sec", "2 sec", "5 sec", "10 sec"};
 //
 //    private static final int DEFAULT_WINDOW_LENGTH = 3;
     int nEpoch = 0;
     final int maxEpoch = 50;
-    int count = 50;
+    int count = 0;
     private int windowLength = 100;
-
     private SimpleXYSeries amplitudeHistorySeries;
     private SimpleXYSeries amplitudeHistorySeries2;
     private SimpleXYSeries amplitudeFullSeries = null;
     private SimpleXYSeries amplitudeFullSeries2 = null;
+
+
 
     private XYPlot amplitudePlot = null;
 
@@ -101,6 +109,7 @@ public class AmplitudeFragment extends Fragment {
 
     int step = 0;
     int step2 = 0;
+    int previousStep = 0;
 
     float current_stat_result = 0;
     float current_stat_result2 = 0;
@@ -109,7 +118,7 @@ public class AmplitudeFragment extends Fragment {
     boolean ready = false;
 
     boolean acceptData = false;
-
+    boolean isCleared = false;
     private String dataFilename = null;
 
     private final byte dataSeparator = AttysScope.DATA_SEPARATOR_TAB;
@@ -126,6 +135,7 @@ public class AmplitudeFragment extends Fragment {
 
         step = 0;
         step2 = 0;
+        previousStep = 0;
 
         int n = amplitudeHistorySeries.size();
         for (int i = 0; i < n; i++) {
@@ -142,9 +152,8 @@ public class AmplitudeFragment extends Fragment {
             amplitudeHistorySeries2.setTitle(units[channel] + "pp");
         amplitudePlot.setRangeLabel(units[channel]);
         amplitudePlot.setTitle(" ");
-
-        amplitudePlot.redraw();
-
+        amplitudePlot.clear();
+        amplitudePlot.setDomainBoundaries(null, null, BoundaryMode.AUTO);
         ready = true;
     }
     protected static File takeScreenShot (View view, String fileNme){
@@ -206,40 +215,25 @@ public class AmplitudeFragment extends Fragment {
         amplitudePlot = view.findViewById(R.id.amplitude_PlotView);
         amplitudeHistorySeries = new SimpleXYSeries(" ");
       amplitudeHistorySeries2 = new SimpleXYSeries(" ");
-        //amplitudeReadingText = view.findViewById(R.id.amplitude_valueTextView);
-        //amplitudeReadingText.setText(String.format(Locale.US,"%04d", 0));
-//        ToggleButton toggleButtonDoRecord = view.findViewById(R.id.amplitude_doRecord);
-//        toggleButtonDoRecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-//                acceptData = isChecked;
-//            }
-//        });
-//        toggleButtonDoRecord.setChecked(true);
-
         Button startButton = view.findViewById(R.id.start_recording);
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 reset();
                 acceptData = true;
+                updatePlot(channel, isStatic);
             }
         });
 
 
-//        Button screenshotButton = view.findViewById(R.id.take_screenshot);
-//        screenshotButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                takeScreenShot(getActivity().getWindow().getDecorView().getRootView(), "Screenshot");
-//            }
-//        });
-//        Button resetButton = view.findViewById(R.id.amplitude_Reset);
-//        resetButton.setOnClickListener(new View.OnClickListener() {
-//            public void onClick(View v) {
-//                reset();
-//            }
-//
-//        });
+        Button screenshotButton = view.findViewById(R.id.take_screenshot);
+        screenshotButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                takeScreenShot(getActivity().getWindow().getDecorView().getRootView(), "Screenshot");
+            }
+        });
+
         Button saveButton = view.findViewById(R.id.save_history);
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -248,20 +242,53 @@ public class AmplitudeFragment extends Fragment {
                 saveEpoch(isStatic, amplitudeHistorySeries2, previousEpoch2, nEpoch);
                 nEpoch ++;
                 count ++;
+                isCleared = false;
                 if(nEpoch == maxEpoch) {
                     nEpoch = 0; // populate the array from the beginning
                 }
             }
         });
+        Spinner historySpinner = view.findViewById(R.id.show_history);
+        ArrayAdapter<String> adapterHistoryStatus =
+                new ArrayAdapter<>(requireContext(),
+                        android.R.layout.simple_spinner_dropdown_item,
+                        historyStatus);
 
-        Button showHistoryButton = view.findViewById(R.id.show_history);
-        showHistoryButton.setOnClickListener(new View.OnClickListener() {
+        adapterHistoryStatus.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        historySpinner.setAdapter(adapterHistoryStatus);
+
+        historySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onClick(View v) {
-                addPreviousEpoch(count, channel);
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+                if (position == 0) {
+                    // turn off the history plot
+
+                } else if (position == 1) {
+                    addPreviousEpoch(count, channel,nEpoch);// show history
+                    Toast.makeText(getContext(), "No Previous Epoch Displayed", Toast.LENGTH_SHORT).show();
+
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
             }
         });
+        historySpinner.setBackgroundResource(android.R.drawable.btn_default);
+        historySpinner.setSelection(0); // By default, set it to OFF
 
+
+
+        Button clearHistoryButton = view.findViewById(R.id.clear_history);
+        clearHistoryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearPreviousEpoch();
+            }
+        });
 
         Button highlightButton = view.findViewById(R.id.highlight);
         highlightButton.setOnClickListener(new View.OnClickListener() {
@@ -308,11 +335,6 @@ public class AmplitudeFragment extends Fragment {
         });
 
         Spinner spinnerChannel = view.findViewById(R.id.amplitude_channel);
-//        String[] channelName = {"ADC_1", "ADC_2", "ADC_1+ADC_2"};
-//        ArrayAdapter<String> adapterChannel =
-//                new ArrayAdapter<>(requireContext(),
-//                android.R.layout.simple_spinner_dropdown_item,
-//                channelName);
         ArrayAdapter<String> adapterChannel =
                 new ArrayAdapter<>(requireContext(),
                         android.R.layout.simple_spinner_dropdown_item,
@@ -326,7 +348,7 @@ public class AmplitudeFragment extends Fragment {
                 if(!isStatic) {
                     reset();
                 }
-                updatePlot(channel);
+                updatePlot(channel, isStatic);
             }
 
             @Override
@@ -341,47 +363,9 @@ public class AmplitudeFragment extends Fragment {
         if (amplitudePlot != null) {
             amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 20 * winLen);
         }
-//        Spinner spinnerHistory = view.findViewById(R.id.view_history);
-//        ArrayAdapter<String> adapterHistory = new ArrayAdapter<>(getContext(),
-//                android.R.layout.simple_spinner_dropdown_item,
-//                PREVIOUS_EPOCHES);
-//        adapterHistory.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//        spinnerHistory.setPrompt("HISTORY");
-//        spinnerHistory.setAdapter(adapterHistory);
-//        spinnerHistory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//            @Override
-//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//                String item = parent.getItemAtPosition(position).toString();
-//                if(item.equals("No Previous Epoch")){
-//                    Toast.makeText(parent.getContext(), "No Previous Epoch Displayed", Toast.LENGTH_SHORT).show();
-//                }
-//                else if (item.equals("All Previous Epoch")){
-//                    Toast.makeText(parent.getContext(),"Display All Previous Data Stored", Toast.LENGTH_SHORT).show();
-//                }
-//                else {
-//                    try {
-//                        int nEpoch = Integer.parseInt(PREVIOUS_EPOCHES[position].split(" ")[0].substring(0, 2));
-//                        Toast.makeText(parent.getContext(),"Display Previous" + " " + nEpoch + " " + "Epoch", Toast.LENGTH_SHORT).show();
-//                    } catch (NumberFormatException e) {
-//                        // Handle the exception here, for example by displaying an error message or using a default value
-//                        Toast.makeText(getContext(), "The string cannot be parsed to a valid integer.", Toast.LENGTH_SHORT).show();
-//                    }
-//                }
-//            }
-//
-//            @Override
-//            public void onNothingSelected(AdapterView<?> parent) {
-//                // Do nothing
-//            }
-//        });
-//        spinnerHistory.setBackgroundResource(android.R.drawable.btn_default);
-//        spinnerHistory.setSelection(0);
-
         setPlot();
-
         Spinner spinnerMaxY = view.findViewById(R.id.amplitude_maxy);
         ArrayAdapter<String> adapter1 = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_dropdown_item, MAXYTXT);
-        adapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerMaxY.setAdapter(adapter1);
         spinnerMaxY.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -461,83 +445,43 @@ public class AmplitudeFragment extends Fragment {
         amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
     }
 
-    private void updatePlot(int channel) {
+    private void updatePlot(int channel, boolean isStatic) {
         if (channel == AttysComm.INDEX_Analogue_channel_1) {
             amplitudePlot.clear();
-            amplitudePlot.addSeries(amplitudeHistorySeries,
-                    new LineAndPointFormatter(
-                            Color.rgb(100, 255, 255), null, null, null));
-        } else if (channel == AttysComm.INDEX_Analogue_channel_2) {
+            if(isStatic){
+                SimpleXYSeries ySeries = new SimpleXYSeries(new ArrayList<Number>(), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "");
+                for (int i = 0; i < 18; i++) {
+                    float xValue = -6 + i * (30.0f - (-6)) / 17; // Correspond X-axis to Y-axis
+                    ySeries.addLast(xValue, amplitudeHistorySeries.getY(i));
+                }
+                amplitudePlot.addSeries(ySeries, new LineAndPointFormatter(
+                        Color.GREEN, null, null, null));
+            }
+            else {
+                amplitudePlot.addSeries(amplitudeHistorySeries,
+                        new LineAndPointFormatter(
+                                Color.rgb(100, 255, 255), null, null, null));
+            }
+        }
+        else if (channel == AttysComm.INDEX_Analogue_channel_2) {
             amplitudePlot.clear();
-            amplitudePlot.addSeries(amplitudeHistorySeries2,
-                    new LineAndPointFormatter(
-                            Color.rgb(255, 100, 255), null, null, null));
+            if(isStatic){
+                SimpleXYSeries ySeries2 = new SimpleXYSeries(new ArrayList<Number>(), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "");
+                for (int i = 0; i < 18; i++) {
+                    float xValue = -6 + i * (30.0f - (-6)) / 17; // Correspond X-axis to Y-axis
+                    ySeries2.addLast(xValue, amplitudeHistorySeries2.getY(i));
+                }
+                amplitudePlot.addSeries(ySeries2, new LineAndPointFormatter(
+                        Color.RED, null, null, null));
+            }
+            else {
+                amplitudePlot.addSeries(amplitudeHistorySeries2,
+                        new LineAndPointFormatter(
+                                Color.rgb(100, 255, 255), null, null, null));
+            }
         }
         amplitudePlot.redraw();
     }
-//    private void setPlot() {
-////        if(channel == AttysComm.INDEX_Analogue_channel_1){
-////            Toast.makeText(getContext(), "channel is " + channel, Toast.LENGTH_SHORT).show();
-//            amplitudePlot.addSeries(amplitudeHistorySeries,
-//                new LineAndPointFormatter(
-//                        Color.rgb(100, 255, 255), null, null, null));
-////        else if (channel == AttysComm.INDEX_Analogue_channel_2){
-////            Toast.makeText(getContext(), "channel is " + channel, Toast.LENGTH_SHORT).show();
-////            amplitudePlot.addSeries(amplitudeHistorySeries2,
-////                    new LineAndPointFormatter(
-////                            Color.rgb(255, 100, 255), null, null, null));
-////        }
-////        else{
-////            Toast.makeText(getContext(), "Are We in This Condition?" , Toast.LENGTH_SHORT).show();
-////        }
-//
-//        Paint paint = new Paint();
-//        paint.setColor(Color.argb(128, 0, 255, 0));
-//        amplitudePlot.getGraph().setDomainGridLinePaint(paint);
-//        amplitudePlot.getGraph().setRangeGridLinePaint(paint);
-//
-//        amplitudePlot.setDomainLabel("t/sec");
-//        amplitudePlot.setRangeLabel(" ");
-//
-//        amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.FIXED);
-//        amplitudePlot.setRangeUpperBoundary(1, BoundaryMode.AUTO);
-//
-//        XYGraphWidget.LineLabelRenderer lineLabelRendererY = new XYGraphWidget.LineLabelRenderer() {
-//            @Override
-//            public void drawLabel(Canvas canvas,
-//                                  XYGraphWidget.LineLabelStyle style,
-//                                  Number val, float x, float y, boolean isOrigin) {
-//                Rect bounds = new Rect();
-//                style.getPaint().getTextBounds("a", 0, 1, bounds);
-//                drawLabel(canvas, String.format(Locale.US,"%04.5f ", val.floatValue()),
-//                        style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
-//            }
-//        };
-//
-//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.LEFT, lineLabelRendererY);
-//        XYGraphWidget.LineLabelStyle lineLabelStyle = amplitudePlot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT);
-//        Rect bounds = new Rect();
-//        String dummyTxt = String.format(Locale.US,"%04.5f ", 100000.000599);
-//        lineLabelStyle.getPaint().getTextBounds(dummyTxt, 0, dummyTxt.length(), bounds);
-//        amplitudePlot.getGraph().setMarginLeft(bounds.width());
-//
-//        XYGraphWidget.LineLabelRenderer lineLabelRendererX = new XYGraphWidget.LineLabelRenderer() {
-//            @Override
-//            public void drawLabel(Canvas canvas,
-//                                  XYGraphWidget.LineLabelStyle style,
-//                                  Number val, float x, float y, boolean isOrigin) {
-//                if (!isOrigin) {
-//                    Rect bounds = new Rect();
-//                    style.getPaint().getTextBounds("a", 0, 1, bounds);
-//                    drawLabel(canvas, String.format(Locale.US,"%d", val.intValue()),
-//                            style.getPaint(), x + (float)bounds.width() / 2, y + bounds.height(), isOrigin);
-//                }
-//            }
-//        };
-//
-//        amplitudePlot.getGraph().setLineLabelRenderer(XYGraphWidget.Edge.BOTTOM, lineLabelRendererX);
-//
-//    }
 
     public synchronized void addValue(final float[] sample) {
         if (!ready) return;
@@ -612,7 +556,25 @@ public class AmplitudeFragment extends Fragment {
             for (int i = 0; i < nToRemove; i++) {
                 amplitudeHistorySeries.removeFirst();
             }
-        } // keeps last 18 samples only for static plot
+            amplitudePlot.clear();
+            amplitudePlot.setDomainBoundaries(-6, 30, BoundaryMode.FIXED);
+            double stepSize = (30.0 - (-6.0)) / 18.0;
+            amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, stepSize);
+            SimpleXYSeries ySeries = new SimpleXYSeries(new ArrayList<Number>(), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "");
+            if(ySeries.size() > 0){
+            for (int j = 0; j < ySeries.size(); j++){
+                ySeries.removeFirst();
+            }
+            }
+            for (int i = 0; i < 18; i++) {
+                float xValue = -6 + i * (30.0f - (-6)) / 17; // Correspond X-axis to Y-axis
+                ySeries.addLast(xValue, amplitudeHistorySeries.getY(i));
+            }
+            if (channel == AttysComm.INDEX_Analogue_channel_1){
+                LineAndPointFormatter seriesFormat = new LineAndPointFormatter(Color.GREEN, null, null, null);
+                amplitudePlot.addSeries(ySeries, seriesFormat);
+            }
+        }
         amplitudePlot.redraw();
 
 
@@ -668,8 +630,19 @@ public class AmplitudeFragment extends Fragment {
             for (int i = 0; i < nToRemove; i++) {
                 amplitudeHistorySeries2.removeFirst();
             }
-        } // keeps last 18 samples only for static plot
-
+            amplitudePlot.setDomainBoundaries(-6, 30, BoundaryMode.FIXED);
+            double stepSize = (30.0 - (-6.0)) / 18.0;
+            amplitudePlot.setDomainStep(StepMode.INCREMENT_BY_VAL, stepSize);
+            SimpleXYSeries ySeries2 = new SimpleXYSeries(new ArrayList<Number>(), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "");
+            for (int i = 0; i < 18; i++) {
+                float xValue = -6 + i * (30.0f - (-6)) / 17; // Correspond X-axis to Y-axis
+                ySeries2.addLast(xValue, amplitudeHistorySeries2.getY(i));
+            }
+            if (channel == AttysComm.INDEX_Analogue_channel_2){
+            LineAndPointFormatter seriesFormat = new LineAndPointFormatter(Color.RED, null, null, null);
+            amplitudePlot.addSeries(ySeries2, seriesFormat);
+                        }
+        }
         amplitudePlot.redraw();
 
 
@@ -725,16 +698,70 @@ public class AmplitudeFragment extends Fragment {
         // Set the background paint of the graph widget to the linear gradient paint
         plot.getGraph().setBackgroundPaint(bgPaint);
     }
-    private void addPreviousEpoch(int count, int channel){
-        SimpleXYSeries[] previousSeries = new SimpleXYSeries[50];
+
+    private void addPreviousEpoch(int count, int channel, int nEpoch){
+        SimpleXYSeries[] previousEpochSeries = new SimpleXYSeries[maxEpoch];
+        SimpleXYSeries[] previousEpochSeries2 = new SimpleXYSeries[maxEpoch];
+        int alpha = 128;// adjust the transparency of the plot
         if(count < 50){ // when we don't have 50 epoch, plot all we have
-            if (channel == AttysComm.INDEX_Analogue_channel_1){ // add the arrays from channel 1
+            // if channel is ADC 1..
+            if (channel == AttysComm.INDEX_Analogue_channel_1){
+                for (int i = 0; i < nEpoch; i++) {
+                    // Convert the float array to a list of Float objects
+                    List<Float> yValues = new ArrayList<Float>();
+                    for (int j = 0; j < previousEpoch[i].length; j++) {
+                        yValues.add(previousEpoch[i][j]);
+                    }
+
+                    // Create a new series with a length of 18
+                    SimpleXYSeries series = new SimpleXYSeries(
+                            Arrays.asList(-6, -4, -2, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30), // x values
+                            yValues, // y values
+                            " " // series title
+                    );
+                    // Add the series to the array
+                    if (series.size() == 18) {
+                        previousEpochSeries[i] = series;
+                        amplitudePlot.addSeries(previousEpochSeries[i],
+                                new LineAndPointFormatter(
+                                        Color.argb(alpha, 0, 255, 0), null, null, null
+                                )
+                        );
+                        amplitudePlot.redraw();
+                    }
+                }
 
             }
-            else if (channel == AttysComm.INDEX_Analogue_channel_2){ // add the arrays from channel 2
+            // if channel is ADC2 then....
+            else if (channel == AttysComm.INDEX_Analogue_channel_2){
+                for (int m = 0; m < nEpoch; m++) {
+                    // Convert the float array to a list of Float objects
+                    List<Float> yValues2 = new ArrayList<Float>();
+                    for (int n = 0; n < previousEpoch2[m].length; n++) {
+                        yValues2.add(previousEpoch2[m][n]);
+                    }
+
+                    // Create a new series with a length of 18
+                    SimpleXYSeries series2 = new SimpleXYSeries(
+                            Arrays.asList(-6, -4, -2, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30), // x values
+                            yValues2, // y values
+                            " " // series title
+                    );
+                    // Add the series to the array
+                    if (series2.size() == 18) {
+                        previousEpochSeries2[m] = series2;
+                        amplitudePlot.addSeries(previousEpochSeries2[m],
+                                new LineAndPointFormatter(
+                                        Color.argb(alpha, 255, 0, 0), null, null, null
+                                )
+                        );
+                        amplitudePlot.redraw();
+                    }
+                }
 
             }
-        }
+            }
+
         else { // when count >50, plot previous 50 plots
             if (channel == AttysComm.INDEX_Analogue_channel_1){
 
@@ -744,6 +771,17 @@ public class AmplitudeFragment extends Fragment {
             }
 
         }
+
+    }
+    private void clearPreviousEpoch(){
+        count = 0;
+        nEpoch = 0;
+        for (int i = 0; i < maxEpoch; i++ ){
+            for(int j =0; j < 18; j ++){
+                previousEpoch[i][j] = 0; // setting all the array element to 0
+            }
+        }
+        isCleared = true;
 
     }
 

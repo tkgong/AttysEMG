@@ -24,12 +24,15 @@ ToggleButton allows you to have a different style when it's pressed and when it'
             android:layout_height="40dp"
             android:layout_weight="1"
             android:text="START "/>
-        <Button
-            android:id="@+id/save_history"
+        <Spinner
+            android:id="@+id/amplitude_maxy"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:text="SAVE" />
+            android:clickable="true"
+            android:spinnerMode="dropdown" />
+
+
         <Button
             android:id="@+id/highlight"
             android:layout_width="0dp"
@@ -43,12 +46,12 @@ ToggleButton allows you to have a different style when it's pressed and when it'
 <!--            android:layout_height="40dp"-->
 <!--            android:layout_weight="1"-->
 <!--            android:text="RESET" />-->
-<!--        <Button-->
-<!--            android:id="@+id/take_screenshot"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="40dp"-->
-<!--            android:layout_weight="1"-->
-<!--            android:text="SCREENSHOT" />-->
+        <Button
+            android:id="@+id/take_screenshot"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="SCREENSHOT" />
 
 
     </LinearLayout>
@@ -58,13 +61,7 @@ ToggleButton allows you to have a different style when it's pressed and when it'
         android:layout_height="40dp"
         android:orientation="horizontal">
 
-        <Spinner
-            android:id="@+id/amplitude_maxy"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:spinnerMode="dropdown" />
+
 
 <!--        <Spinner-->
 <!--            android:id="@+id/amplitude_window"-->
@@ -83,11 +80,25 @@ ToggleButton allows you to have a different style when it's pressed and when it'
 <!--            android:textAlignment="center"-->
 <!--            />-->
         <Button
+            android:id="@+id/save_history"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="SAVE" />
+        <Button
+            android:id="@+id/clear_history"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="CLEAR"/>
+        <Spinner
             android:id="@+id/show_history"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:text="PREVIOUS"/>
+            android:clickable="true"
+            android:spinnerMode="dropdown"/>
+
         <Spinner
             android:id="@+id/amplitude_channel"
             android:layout_width="0dp"
