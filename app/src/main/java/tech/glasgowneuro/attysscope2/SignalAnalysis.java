@@ -19,10 +19,9 @@ public class SignalAnalysis {
         data = new float[maxdata];
         data2 = new float [maxdata2];
     }
-
     public void addData(float _data) {
         if (nData < maxdata) {
-            data[nData] = _data;
+            data[nData] = 100 * _data;
             nData++;
         }
     }
@@ -84,5 +83,77 @@ public class SignalAnalysis {
             min = 0;
         }
         return max - min;
+    }
+    public  float getData(){
+        return data[nData - 1];
+    }
+    public float getData2(){
+        return data2[nData2 - 1];
+    }
+    public float[] getLast3Data(){
+        float last3Data[] = new float[3];
+        if(nData > 2){ // three data in buffer
+            for(int i = 0; i < 3; i++){
+                last3Data[i] = data[nData -3 + i];
+            }
+        }
+        else if(nData == 2){
+            for(int i = 0; i < 3; i ++){
+                if (i == 0){
+                    last3Data[i] = data[maxdata - 1];
+                }
+                else {
+                    last3Data[i] = data[i - 1];
+                }
+            }
+        }
+        else if(nData == 1){
+            for (int i = 0; i < 3; i++){
+                if (i == 2){
+                    last3Data[i] = data[0];
+                } else{
+                    last3Data[i] = data[maxdata - 2 + i];
+                }
+            }
+        }
+        else if(nData == 0){
+            for(int i = 0; i < 3; i++){
+                last3Data[i] = data[maxdata - 3 + i];
+            }
+        }
+        return last3Data;
+    }
+    public float[] getLast3Data2(){
+        float last3Data2 [] = new float[3];
+        if(nData2 > 2){ // three data in buffer
+            for(int i = 0; i < 3; i++){
+                last3Data2[i] = data2[nData2 -3 + i];
+            }
+        }
+        else if(nData2 == 2){
+            for(int i = 0; i < 3; i ++){
+                if (i == 0){
+                    last3Data2[i] = data2[maxdata2 - 1];
+                }
+                else {
+                    last3Data2[i] = data2[i - 1];
+                }
+            }
+        }
+        else if(nData2 == 1){
+            for (int i = 0; i < 3; i++){
+                if (i == 2){
+                    last3Data2[i] = data2[0];
+                } else{
+                    last3Data2[i] = data2[maxdata2 - 2 + i];
+                }
+            }
+        }
+        else if(nData2 == 0){
+            for(int i = 0; i < 3; i++){
+                last3Data2[i] = data2[maxdata2 - 3 + i];
+            }
+        }
+        return last3Data2;
     }
 }

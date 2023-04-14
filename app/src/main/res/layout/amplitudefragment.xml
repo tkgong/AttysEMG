@@ -32,14 +32,14 @@ ToggleButton allows you to have a different style when it's pressed and when it'
             android:clickable="true"
             android:spinnerMode="dropdown" />
 
-
-        <Button
-            android:id="@+id/highlight"
+        <ToggleButton
+            android:id="@+id/highlight_button"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:text="HIGHLIGHT"/>
-
+            android:text="Toggle Button"
+            android:textOff="REMOVED"
+            android:textOn="HIGHLIGHTED" />
 <!--        <Button-->
 <!--            android:id="@+id/amplitude_Reset"-->
 <!--            android:layout_width="0dp"-->

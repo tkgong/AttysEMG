@@ -76,6 +76,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
 import tech.glasgowneuro.attyscomm.AttysService;
@@ -109,7 +110,7 @@ public class AttysScope extends AppCompatActivity { // main activity
     MenuItem menuItemRec = null;
 
     private AttysService attysService = null;
-    private byte samplingRate = AttysComm.ADC_RATE_250HZ; //should be more than that
+    private byte samplingRate = AttysComm.ADC_RATE_500Hz; //should be more than that
 
     private UpdatePlotTask updatePlotTask = null;
 
@@ -119,10 +120,12 @@ public class AttysScope extends AppCompatActivity { // main activity
     final int NOTIFICATION_ID = (new Random()).nextInt();
 
     private ForegroundBroadcastReceiver foregroundBroadcastReceiver = null;
-
+    int nToBeAdded = 0;
     private final static String FOREGROUND = "tech.glasgowneuro.attysscope2.FOREGROUND";
     private PendingIntent fgPendingIntent = null;
-
+    private final AtomicInteger gotDataCounter = new AtomicInteger(0);
+    private boolean isStatic = false ;
+    private final int STATIC_DATA_LIMIT = 15;
     public Ch2Converter ch2Converter = new Ch2Converter();
 
     private final Butterworth[] highpass = new Butterworth[2];
@@ -172,15 +175,16 @@ public class AttysScope extends AppCompatActivity { // main activity
 
     private int gpio0 = 0;
     private int gpio1 = 0;
-public static void verifyStoragePermission (Activity activity){
-    int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
-    if (permission != PackageManager.PERMISSION_GRANTED){
-        ActivityCompat.requestPermissions(activity,
-                PERMISSION_STORAGE,
-                REQUEST_EXTERNAL_STORAGE);
+
+    public static void verifyStoragePermission (Activity activity){
+    int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (permission != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(activity,
+                    PERMISSION_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE);
+        }
     }
-}
 
     public enum TextAnnotation {
         NONE,
@@ -205,13 +209,15 @@ public static void verifyStoragePermission (Activity activity){
     public static byte dataSeparator = 0;
     public static Uri directoryUri = null;
     public static String LASTURI = "lasturi";
-
+    public boolean alreadyAdded = false;
     private static final String ATTYS_SUBDIR = "attys";
 
     ProgressBar progress = null;
 
     AlertDialog alertDialog = null;
-
+    public boolean getAlreadyAdded() {
+        return alreadyAdded;
+    }
     // converts Ch2 data from its voltage units to resistance, temperature etc
     public class Ch2Converter {
         // the series resistance on the input pins
@@ -496,6 +502,7 @@ public static void verifyStoragePermission (Activity activity){
                     break;
             }
         }
+
 
         public void run() {
 
@@ -922,12 +929,11 @@ public static void verifyStoragePermission (Activity activity){
                 }
             }
 
-            dataRecorder.saveData(samplenumber, data, adc1, adc2);
+                dataRecorder.saveData(samplenumber, data, adc1, adc2);
 
-            data[AttysComm.INDEX_Analogue_channel_1] = adc1;
-            data[AttysComm.INDEX_Analogue_channel_2] = adc2;
-            addFilteredSample(data);
-
+                data[AttysComm.INDEX_Analogue_channel_1] = adc1;
+                data[AttysComm.INDEX_Analogue_channel_2] = adc2;
+                addFilteredSample(data);
             if ((timestamp % 250) == 0) {
                 showNotification((double) samplenumber /
                         attysService.getAttysComm().getSamplingRateInHz());
