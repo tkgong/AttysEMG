@@ -84,7 +84,7 @@ public class AmplitudeFragment extends Fragment {
     int channel = AttysComm.INDEX_Analogue_channel_1;
     final int nSampleBufferSize = 100;
     private static final String[] MAXYTXT = {
-            "auto", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
+            "AUTO", "1E8", "1E7", "1E6", "1E5", "1E4", "500", "50", "20", "10", "5", "2", "1", "0.5", "0.1", "0.05",
             "0.01", "0.005", "0.001", "0.0005", "0.0001"};
     private static final String[] historyStatus = {
             "OFF",
@@ -104,7 +104,9 @@ public class AmplitudeFragment extends Fragment {
     private SimpleXYSeries amplitudeFullSeries = null;
     private SimpleXYSeries amplitudeFullSeries2 = null;
     float amplitudeHistorySeriesMaxY = 0;
+    float amplitudeHistorySeriesMinY = 0;
     float previousEpochMaxY = 0;
+    float previousEpochMinY = 0;
     boolean isShown = false;
     int nData = 0;
     private XYPlot amplitudePlot = null;
@@ -311,6 +313,10 @@ public class AmplitudeFragment extends Fragment {
                 updatePlot(channel, isStatic);
                 historySpinner.setSelection(0);
                 highlightToggleButton.setChecked(false);
+                amplitudeHistorySeriesMaxY =0;
+                amplitudeHistorySeriesMinY = 0;
+                previousEpochMaxY = 0;
+                previousEpochMinY = 0;
             }
         });
 
@@ -345,17 +351,20 @@ public class AmplitudeFragment extends Fragment {
                             if (!userInput_left.isEmpty() && !userInput_Right.isEmpty()) {
                                 leftMargin = Integer.parseInt(userInput_left);
                                 rightMargin = Integer.parseInt(userInput_Right);
-
-//                            if(userInput_left.isEmpty() || userInput_Right.isEmpty()){
-//                                Toast.makeText(getContext(), "Please type valid left and right margin values", Toast.LENGTH_SHORT).show();
-//                            }
-//                            else {
                             dialog.dismiss();
-//                            highlightPlot(amplitudePlot,leftMargin,rightMargin,isHighlighted);
-                                for (int i = 0; i < amplitudeHistorySeries.size(); i++) {
-                                    double yValue = amplitudeHistorySeries.getY(i).doubleValue();
-                                    if (yValue > amplitudeHistorySeriesMaxY) {
-                                        amplitudeHistorySeriesMaxY = (float) yValue;
+                            if (channel == AttysComm.INDEX_Analogue_channel_1){
+                                amplitudeHistorySeriesMaxY = 0;
+                                amplitudeHistorySeriesMinY = 0;
+                                for (int i = 0; i < amplitudeStaticSeries.size(); i++) {
+                                    double yMaxValue = amplitudeStaticSeries.getY(i).doubleValue();
+                                    if (yMaxValue > amplitudeHistorySeriesMaxY) {
+                                        amplitudeHistorySeriesMaxY = (float) yMaxValue;
+                                    }
+                                }
+                                for (int i = 0; i < amplitudeStaticSeries.size(); i++) {
+                                    double yMinValue = amplitudeStaticSeries.getY(i).doubleValue();
+                                    if (yMinValue < amplitudeHistorySeriesMinY) {
+                                        amplitudeHistorySeriesMinY = (float) yMinValue;
                                     }
                                 }
                                 for (int i = 0; i < 50; i++) {
@@ -366,17 +375,67 @@ public class AmplitudeFragment extends Fragment {
                                         }
                                     }
                                 }
+                                for (int i = 0; i < 50; i++) {
+                                    for (int j = 0; j < 19; j++) {
+                                        double minVal = previousEpoch[i][j];
+                                        if (minVal < previousEpochMinY) {
+                                            previousEpochMinY = (float) minVal;
+                                        }
+                                    }
+                                }
                                 if (previousEpochMaxY >+ amplitudeHistorySeriesMaxY){
                                     amplitudeHistorySeriesMaxY = previousEpochMaxY;
                                 }
+                                if(previousEpochMinY < amplitudeHistorySeriesMinY){
+                                    amplitudeHistorySeriesMinY = previousEpochMinY;
+                                }
+                            }
+                            else if(channel == AttysComm.INDEX_Analogue_channel_2){
+                                amplitudeHistorySeriesMaxY = 0;
+                                amplitudeHistorySeriesMinY = 0;
+                                for (int i = 0; i < amplitudeStaticSeries2.size(); i++) {
+                                    double yMaxValue = amplitudeStaticSeries2.getY(i).doubleValue();
+                                    if (yMaxValue > amplitudeHistorySeriesMaxY) {
+                                        amplitudeHistorySeriesMaxY = (float) yMaxValue;
+                                    }
+                                }
+                                for (int i = 0; i < amplitudeStaticSeries2.size(); i++) {
+                                    double yMinValue = amplitudeStaticSeries2.getY(i).doubleValue();
+                                    if (yMinValue < amplitudeHistorySeriesMinY) {
+                                        amplitudeHistorySeriesMaxY = (float) yMinValue;
+                                    }
+                                }
+                                for (int i = 0; i < 50; i++) {
+                                    for (int j = 0; j < 19; j++) {
+                                        double maxVal = previousEpoch2[i][j];
+                                        if (maxVal > previousEpochMaxY) {
+                                            previousEpochMaxY = (float) maxVal;
+                                        }
+                                    }
+                                }
+                                for (int i = 0; i < 50; i++) {
+                                    for (int j = 0; j < 19; j++) {
+                                        double minVal = previousEpoch2[i][j];
+                                        if (minVal < previousEpochMinY) {
+                                            previousEpochMinY = (float) minVal;
+                                        }
+                                    }
+                                }
+                                if (previousEpochMaxY >+ amplitudeHistorySeriesMaxY){
+                                    amplitudeHistorySeriesMaxY = previousEpochMaxY;
+                                }
+                                if (previousEpochMinY < amplitudeHistorySeriesMinY){
+                                    amplitudeHistorySeriesMinY = previousEpochMinY;
+                                }
+                            }
                             SimpleXYSeries verticalLineSeries = new SimpleXYSeries(
                                     Arrays.asList(leftMargin, leftMargin),
-                                    Arrays.asList(0, amplitudeHistorySeriesMaxY),
+                                    Arrays.asList(amplitudeHistorySeriesMinY, amplitudeHistorySeriesMaxY),
                                     "H_L"
                             );
                             SimpleXYSeries verticalLineSeries2 = new SimpleXYSeries(
                                         Arrays.asList(rightMargin, rightMargin),
-                                        Arrays.asList(0, amplitudeHistorySeriesMaxY),
+                                        Arrays.asList(amplitudeHistorySeriesMinY, amplitudeHistorySeriesMaxY),
                                         "H_R"
                                 );
                             amplitudePlot.addSeries(verticalLineSeries, new LineAndPointFormatter(Color.argb(128, 255, 255, 0), null, null, null));
@@ -455,8 +514,10 @@ public class AmplitudeFragment extends Fragment {
                         amplitudePlot.clear();
                         updatePlot(channel, isStatic);
                         isShown = false;
+                        highlightToggleButton.setChecked(false);
                     }
                 } else if (position == 1) {
+                    highlightToggleButton.setChecked(false);
                     addPreviousEpoch(count, channel,nEpoch, isCleared);// show history
                     isShown = true;
                 }
@@ -523,7 +584,10 @@ public class AmplitudeFragment extends Fragment {
                 if(!isStatic) {
                     reset();
                 }
+                else{
                 updatePlot(channel, isStatic);
+                highlightToggleButton.setChecked(false);
+                }
             }
 
             @Override
@@ -546,6 +610,7 @@ public class AmplitudeFragment extends Fragment {
                 if (position == 0) {
                     amplitudePlot.setRangeUpperBoundary(1, BoundaryMode.AUTO);
                     amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.AUTO);
+                    amplitudePlot.redraw();
                 } else {
                     Screensize screensize = new Screensize(getContext());
                     amplitudePlot.setRangeLowerBoundary(0, BoundaryMode.FIXED);
@@ -555,6 +620,7 @@ public class AmplitudeFragment extends Fragment {
                         amplitudePlot.setRangeStep(StepMode.INCREMENT_BY_VAL, Float.parseFloat(MAXYTXT[position]) / 10);
                     }
                     amplitudePlot.setRangeUpperBoundary(Float.parseFloat(MAXYTXT[position]), BoundaryMode.FIXED);
+                    amplitudePlot.redraw();
                 }
             }
 
@@ -564,9 +630,6 @@ public class AmplitudeFragment extends Fragment {
         });
         spinnerMaxY.setBackgroundResource(android.R.drawable.btn_default);
         spinnerMaxY.setSelection(0);
-
-
-
         return view;
 
     }
